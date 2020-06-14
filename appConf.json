@@ -1,3 +1,8 @@
 {
-  "example":"test2"
+  "inpDataset":"",
+  "inpNbIn":"",
+  "inpNbOut":"",
+  "inpSplitTrain":"",
+  "inpSplitValid":"",
+  "inpSplitEval":""
 }

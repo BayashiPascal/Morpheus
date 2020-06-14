@@ -15,8 +15,8 @@ gboolean CbTimer(gpointer data) {
 
 }
 
-// Callback function for the 'clicked' event on the action button
-gboolean CbBtnActionClicked(
+// Callback function for the 'clicked' event on btnEval
+gboolean CbBtnEvalClicked(
   GtkButton* btn,
     gpointer user_data) {
 
@@ -24,54 +24,15 @@ gboolean CbBtnActionClicked(
   (void)btn;
   (void)user_data;
 
-  printf("action\n");
-
-  // Paint the GbWidget
-  GBSurface* surf = GBSurf(appDraws.gbWidgetControl);
-  VecShort2D pos = VecShortCreateStatic2D();
-  bool flagStep = TRUE;
-  do {
-
-    short posX =
-      VecGet(
-        &pos,
-        0);
-    short posY =
-      VecGet(
-        &pos,
-        1);
-    GBPixel pixel;
-    pixel._rgba[GBPixelAlpha] = 255;
-    pixel._rgba[GBPixelRed] =
-      MIN(
-        255,
-        posX);
-    pixel._rgba[GBPixelGreen] =
-      MIN(
-        255,
-        0);
-    pixel._rgba[GBPixelBlue] =
-      MIN(
-        255,
-        posY);
-    GBSurfaceSetFinalPixel(
-      surf,
-      &pos,
-      &pixel);
-    flagStep =
-      VecStep(
-        &pos,
-        GBDim(appDraws.gbWidgetControl));
-
-  } while (flagStep);
+  printf("btnEval clicked\n");
 
   // Return true to stop the callback chain
   return TRUE;
 
 }
 
-// Callback function for the 'clicked' event on the quit button
-gboolean CbBtnQuitClicked(
+// Callback function for the 'clicked' event on btnSelectDataset
+gboolean CbBtnSelectDatasetClicked(
   GtkButton* btn,
     gpointer user_data) {
 
@@ -79,8 +40,23 @@ gboolean CbBtnQuitClicked(
   (void)btn;
   (void)user_data;
 
-  // Quit the application
-  GUIQuit();
+  printf("btnSelectDataset clicked\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'clicked' event on btnShuffle
+gboolean CbBtnShuffleClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  printf("btnShuffle clicked\n");
 
   // Return true to stop the callback chain
   return TRUE;
@@ -149,9 +125,6 @@ void CbGtkAppActivate(
 
   // Init the windows
   GUIInitWindows(gtkBuilder);
-
-  // Init the drawables
-  GUIInitDrawables(gtkBuilder);
 
   // Init the callbacks
   GUIInitCallbacks(gtkBuilder);

@@ -50,19 +50,9 @@ void GUIFreeConf(void) {
 
 }
 
-// Free memory used by the drawables
-void GUIFreeDrawables(void) {
-
-  GBFree(&(appDraws.gbWidgetControl));
-
-}
-
 // Function to refresh the content of all graphical widgets
 //(cameras and control)
 void GUIRefreshWidgets(void) {
-
-  // Refresh the control
-  GUIRefreshWidgetControl();
 
   // Give back the hand to the main loop to process pending events
   while(gtk_events_pending()) {
@@ -73,24 +63,12 @@ void GUIRefreshWidgets(void) {
 
 }
 
-// Function to refresh the content of the control widget
-void GUIRefreshWidgetControl(void) {
-
-  // Update the widget
-  GBUpdate(appDraws.gbWidgetControl);
-  GBRender(appDraws.gbWidgetControl);
-
-}
-
 // Free memory used by the application
 void GUIFree(void) {
 
   // Stop the timer
   bool ret = g_source_remove(app.timerId);
   (void)ret;
-
-  // Free the drawable
-  GUIFreeDrawables();
 
   // Free memory
   GUIFreeConf();
@@ -147,28 +125,16 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     G_CALLBACK(CbAppWindowResizeEvent),
     NULL);
 
-  // Set the callback on the 'clicked' event of the action button
+  // Set the callback on the 'clicked' event of btnEval
   GObject* obj =
     gtk_builder_get_object(
       gtkBuilder,
-      "btnAction");
-  GtkWidget* btnAction = GTK_WIDGET(obj);
+      "btnEval");
+  GtkWidget* btnEval = GTK_WIDGET(obj);
   g_signal_connect(
-    btnAction,
+    btnEval,
     "clicked",
-    G_CALLBACK(CbBtnActionClicked),
-    NULL);
-
-  // Set the callback on the 'clicked' event of the quit button
-  obj =
-    gtk_builder_get_object(
-      gtkBuilder,
-      "btnQuit");
-  GtkWidget* btnQuit = GTK_WIDGET(obj);
-  g_signal_connect(
-    btnQuit,
-    "clicked",
-    G_CALLBACK(CbBtnQuitClicked),
+    G_CALLBACK(CbBtnEvalClicked),
     NULL);
 
   // Disable the other signals defined in the UI definition file
@@ -336,46 +302,49 @@ bool GUIParseArg(
 // config file
 void GUILoadConfig(void) {
 
-  // Get the example
-  JSONNode* example =
-    JSONProperty(
-      appConf.config,
-      "example");
-  if (example == NULL) {
+  // Check the content of the configuration file
+  // If there are missing parameters, create them
+  char* paramNames[6] = {
 
-    // Terminate the application if the config file is invalid
-    AppErr->_type = PBErrTypeInvalidArg;
-    sprintf(
-      AppErr->_msg,
-      "Invalid config file (example missing)");
-    PBErrCatch(AppErr);
+    "inpDataset",
+    "inpNbIn",
+    "inpNbOut",
+    "inpSplitTrain",
+    "inpSplitValid",
+    "inpSplitEval"
+
+  };
+
+  for (
+    int iParam = 0;
+    iParam < 6;
+    ++iParam) {
+
+    JSONNode* node =
+      JSONProperty(
+        appConf.config,
+        paramNames[iParam]);
+    if (node == NULL) {
+
+      JSONAddProp(
+        appConf.config,
+        paramNames[iParam],
+        "");
+
+    }
 
   }
 
-  printf(
-    "example: %s\n",
-    JSONLblVal(example));
+  // Init the values in the GUI with the values in the config
+  // TODO
+
+  // Reload the dataset if possible
+  // TODO
 
 }
 
 // Save the current parameters in the config file
 void GUISaveConfig(void) {
-
-  // Get the example in the configuration
-  JSONNode* example =
-    JSONProperty(
-      appConf.config,
-      "example");
-  JSONNode* value =
-    JSONValue(
-      example,
-      0);
-
-  // Update the example in the configuration with the example input value
-  const char* val = gtk_entry_get_text(appInpVal);
-  JSONSetLabel(
-    value,
-    val);
 
   // Save the configuration file
   FILE* configFile =
@@ -483,123 +452,75 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
 
 #endif
 
-  // Get the GtkWidget for the example value
-  appInpVal = GTK_ENTRY(
+  // Get the GtkWidget for the inputs
+  appInpDataset = GTK_ENTRY(
     gtk_builder_get_object(
       gtkBuilder,
-      "inpVal"));
+      "inpDataset"));
+  appInpNbIn = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpNbIn"));
+  appInpNbOut = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpNbOut"));
+  appInpSplitTrain = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitTrain"));
+  appInpSplitValid = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitValid"));
+  appInpSplitEval = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitEval"));
 
-  // Init the widget with the value in the config file
-  JSONNode* example =
+  // Init the widgets with the value in the config file
+  JSONNode* inp =
     JSONProperty(
       appConf.config,
-      "example");
+      "inpDataset");
   gtk_entry_set_text(
-    appInpVal,
-    JSONLblVal(example));
-
-}
-
-// Function to init the drawables
-void GUIInitDrawables(GtkBuilder* const gtkBuilder) {
-
-#if BUILDMODE == 0
-
-  if (gtkBuilder == NULL) {
-
-    AppErr->_type = PBErrTypeNullPointer;
-    sprintf(
-      AppErr->_msg,
-      "'gtkBuilder' is null");
-    PBErrCatch(AppErr);
-
-  }
-
-#endif
-
-  // Create the GBWidget for the control widget
-  VecShort2D dimGBWidget = VecShortCreateStatic2D();
-  VecSet(
-    &dimGBWidget,
-    0,
-    200);
-  VecSet(
-    &dimGBWidget,
-    1,
-    100);
-  appDraws.gbWidgetControl = GBCreateWidget(&dimGBWidget);
-
-  // Pack the widget in the layout
-  GtkWidget* layMain = GTK_WIDGET(
-    gtk_builder_get_object(
-      gtkBuilder,
-      "layMain"));
-  GUIPackGBWidget(
-    appDraws.gbWidgetControl,
-    layMain);
-
-}
-
-// Helper function to add a GBWidget into a GtkBox
-void GUIPackGBWidget(
-   GenBrush* gbWidget,
-  GtkWidget* gtkBox) {
-
-  // Create the widget containers for the GBwidget
-  GtkWidget* container =
-    gtk_box_new(
-      GTK_ORIENTATION_HORIZONTAL,
-      0);
-
-  // Get the dimension of the GbWidget
-  VecShort2D* dimGBWidget = GBDim(gbWidget);
-
-  // Fix the size of the GtkWidget container
-  short w =
-    VecGet(
-      dimGBWidget,
-      0);
-  short h =
-    VecGet(
-      dimGBWidget,
-      1);
-  gtk_widget_set_size_request(
-    container,
-    w,
-    h);
-  gtk_widget_set_hexpand(
-    container,
-    FALSE);
-  gtk_widget_set_vexpand(
-    container,
-    FALSE);
-
-  // Get the GtkWidget from the GBwidgets
-  GtkWidget* widget = GBGetGtkWidget(gbWidget);
-
-  // Fix the size of the GtkWidget
-  gtk_widget_set_hexpand(
-    widget,
-    FALSE);
-  gtk_widget_set_vexpand(
-    widget,
-    FALSE);
-
-  // Insert the GBwidget into its container
-  gtk_box_pack_start(
-    GTK_BOX(container),
-    widget,
-    FALSE,
-    FALSE,
-    0);
-
-  // Insert the GBwidget container into the layout
-  gtk_box_pack_start(
-    GTK_BOX(gtkBox),
-    container,
-    FALSE,
-    FALSE,
-    0);
+    appInpDataset,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpNbIn");
+  gtk_entry_set_text(
+    appInpNbIn,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpNbOut");
+  gtk_entry_set_text(
+    appInpNbOut,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpSplitTrain");
+  gtk_entry_set_text(
+    appInpSplitTrain,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpSplitValid");
+  gtk_entry_set_text(
+    appInpSplitValid,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpSplitEval");
+  gtk_entry_set_text(
+    appInpSplitEval,
+    JSONLblVal(inp));
 
 }
 

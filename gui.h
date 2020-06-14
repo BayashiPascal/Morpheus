@@ -8,8 +8,12 @@
 #define appMainWin app.windows.main
 #define appConf app.config
 #define appInp app.inputs
-#define appInpVal app.inputs.inpVal
-#define appDraws app.drawables
+#define appInpDataset app.inputs.inpDataset
+#define appInpNbIn app.inputs.inpNbIn
+#define appInpNbOut app.inputs.inpNbOut
+#define appInpSplitTrain app.inputs.inpSplitTrain
+#define appInpSplitEval app.inputs.inpSplitEval
+#define appInpSplitValid app.inputs.inpSplitValid
 
 typedef struct GUIWindows {
 
@@ -39,17 +43,15 @@ typedef struct GUIConfig {
 
 typedef struct GUIInputs {
 
-  // Widget to input the example value
-  GtkEntry* inpVal;
+  // Widgets of the dataset tab
+  GtkEntry* inpDataset;
+  GtkEntry* inpNbIn;
+  GtkEntry* inpNbOut;
+  GtkEntry* inpSplitTrain;
+  GtkEntry* inpSplitEval;
+  GtkEntry* inpSplitValid;
 
 } GUIInputs;
-
-typedef struct GUIDrawables {
-
-  // GenBrush to draw on the widget
-  GenBrush* gbWidgetControl;
-
-} GUIDrawables;
 
 typedef struct GUI {
 
@@ -58,9 +60,6 @@ typedef struct GUI {
 
   // Input widgets
   GUIInputs inputs;
-
-  // Drawable widgets
-  GUIDrawables drawables;
 
   // Windows
   GUIWindows windows;
@@ -83,8 +82,18 @@ gboolean CbTimer(gpointer data);
 // Function to init the windows
 void GUIInitWindows(GtkBuilder* const gtkBuilder);
 
-// Callback function for the 'clicked' event on the action button
-gboolean CbBtnActionClicked(
+// Callback function for the 'clicked' event on btnEval
+gboolean CbBtnEvalClicked(
+  GtkButton* btn,
+    gpointer user_data);
+
+// Callback function for the 'clicked' event on btnSelectDataset
+gboolean CbBtnSelectDatasetClicked(
+  GtkButton* btn,
+    gpointer user_data);
+
+// Callback function for the 'clicked' event on btnShuffle
+gboolean CbBtnShuffleClicked(
   GtkButton* btn,
     gpointer user_data);
 
@@ -96,11 +105,6 @@ void GUIFree(void);
 
 // Function called before the application quit
 void GUIQuit(void);
-
-// Callback function for the 'clicked' event on the quit button
-gboolean CbBtnQuitClicked(
-  GtkButton* btn,
-    gpointer user_data);
 
 // Callback function for the 'delete-event' event on the GTK application
 // window
@@ -144,14 +148,6 @@ void GUIInitConf(
 
 // Init the inputs
 void GUIInitInputs(GtkBuilder* const gtkBuilder);
-
-// Function to init the drawables
-void GUIInitDrawables(GtkBuilder* const gtkBuilder);
-
-// Helper function to add a GBWidget into a GtkBox
-void GUIPackGBWidget(
-   GenBrush* gbWidget,
-  GtkWidget* gtkBox);
 
 // Free memory used by the drawables
 void GUIFreeDrawables(void);
