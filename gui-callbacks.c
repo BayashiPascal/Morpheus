@@ -15,6 +15,134 @@ gboolean CbTimer(gpointer data) {
 
 }
 
+// Callback function for the 'clicked' event on btnDataset
+gboolean CbBtnDatasetClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  printf("btnDataset clicked\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpDataset
+gboolean CbInpDatasetChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpDataset changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpNbIn
+gboolean CbInpNbInChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpNbIn changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpNbOut
+gboolean CbInpNbOutChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpNbOut changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpSplitTrain
+gboolean CbInpSplitTrainChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpSplitTrain changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpSplitValid
+gboolean CbInpSplitValidChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpSplitValid changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpSplitEval
+gboolean CbInpSplitEvalChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)inp;
+  (void)user_data;
+
+  printf("inpSplitEval changed\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'clicked' event on btnShuffle
+gboolean CbBtnShuffleClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  printf("btnShuffle clicked\n");
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
 // Callback function for the 'clicked' event on btnEval
 gboolean CbBtnEvalClicked(
   GtkButton* btn,
@@ -41,22 +169,6 @@ gboolean CbBtnSelectDatasetClicked(
   (void)user_data;
 
   printf("btnSelectDataset clicked\n");
-
-  // Return true to stop the callback chain
-  return TRUE;
-
-}
-
-// Callback function for the 'clicked' event on btnShuffle
-gboolean CbBtnShuffleClicked(
-  GtkButton* btn,
-    gpointer user_data) {
-
-  // Unused argument
-  (void)btn;
-  (void)user_data;
-
-  printf("btnShuffle clicked\n");
 
   // Return true to stop the callback chain
   return TRUE;

@@ -125,8 +125,104 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     G_CALLBACK(CbAppWindowResizeEvent),
     NULL);
 
-  // Set the callback on the 'clicked' event of btnEval
+  // Set the callback on the 'clicked' event of btnDataset
   GObject* obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnDataset");
+  GtkWidget* btnDataset = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnDataset,
+    "clicked",
+    G_CALLBACK(CbBtnDatasetClicked),
+    NULL);
+
+  // Set the callback on the 'clicked' event of btnShuffle
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnShuffle");
+  GtkWidget* btnShuffle = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnShuffle,
+    "clicked",
+    G_CALLBACK(CbBtnShuffleClicked),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpDataset
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpDataset");
+  GtkWidget* inpDataset = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpDataset,
+    "changed",
+    G_CALLBACK(CbInpDatasetChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpNbIn
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpNbIn");
+  GtkWidget* inpNbIn = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpNbIn,
+    "changed",
+    G_CALLBACK(CbInpNbInChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpNbOut
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpNbOut");
+  GtkWidget* inpNbOut = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpNbOut,
+    "changed",
+    G_CALLBACK(CbInpNbOutChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpSplitTrain
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitTrain");
+  GtkWidget* inpSplitTrain = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpSplitTrain,
+    "changed",
+    G_CALLBACK(CbInpSplitTrainChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpSplitValid
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitValid");
+  GtkWidget* inpSplitValid = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpSplitValid,
+    "changed",
+    G_CALLBACK(CbInpSplitValidChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpSplitEval
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpSplitEval");
+  GtkWidget* inpSplitEval = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpSplitEval,
+    "changed",
+    G_CALLBACK(CbInpSplitEvalChanged),
+    NULL);
+
+  // Set the callback on the 'clicked' event of btnEval
+  obj =
     gtk_builder_get_object(
       gtkBuilder,
       "btnEval");
@@ -521,6 +617,35 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpSplitEval,
     JSONLblVal(inp));
+
+}
+
+// Init the text boxes
+void GUIInitTextBoxes(GtkBuilder* const gtkBuilder) {
+
+#if BUILDMODE == 0
+
+  if (gtkBuilder == NULL) {
+
+    AppErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      AppErr->_msg,
+      "'gtkBuilder' is null");
+    PBErrCatch(AppErr);
+
+  }
+
+#endif
+
+  // Get the GtkWidget for the text boxes
+  appTextBoxDataset = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtDataset"));
+  appTextBoxEval = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtEval"));
 
 }
 

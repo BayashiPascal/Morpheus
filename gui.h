@@ -14,6 +14,9 @@
 #define appInpSplitTrain app.inputs.inpSplitTrain
 #define appInpSplitEval app.inputs.inpSplitEval
 #define appInpSplitValid app.inputs.inpSplitValid
+#define appTextBoxes app.textboxes
+#define appTextBoxDataset app.textboxes.txtDataset
+#define appTextBoxEval app.textboxes.txtEval
 
 typedef struct GUIWindows {
 
@@ -43,7 +46,7 @@ typedef struct GUIConfig {
 
 typedef struct GUIInputs {
 
-  // Widgets of the dataset tab
+  // Inputs of the dataset tab
   GtkEntry* inpDataset;
   GtkEntry* inpNbIn;
   GtkEntry* inpNbOut;
@@ -53,6 +56,16 @@ typedef struct GUIInputs {
 
 } GUIInputs;
 
+typedef struct GUITextboxes {
+
+  // Text boxes of the dataset tab
+  GtkEntry* txtDataset;
+
+  // Text boxes of the eval tab
+  GtkEntry* txtEval;
+
+} GUITextBoxes;
+
 typedef struct GUI {
 
   // Runtime configuration
@@ -60,6 +73,9 @@ typedef struct GUI {
 
   // Input widgets
   GUIInputs inputs;
+
+  // Text box widgets
+  GUITextBoxes textboxes;
 
   // Windows
   GUIWindows windows;
@@ -148,6 +164,9 @@ void GUIInitConf(
 
 // Init the inputs
 void GUIInitInputs(GtkBuilder* const gtkBuilder);
+
+// Init the text boxes
+void GUIInitTextBoxes(GtkBuilder* const gtkBuilder);
 
 // Free memory used by the drawables
 void GUIFreeDrawables(void);
