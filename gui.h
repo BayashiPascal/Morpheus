@@ -1,22 +1,22 @@
 #include "pberr.h"
 #include "pbjson.h"
 #include "pbmath.h"
-#include "genbrush.h"
+#include "gdataset.h"
 #include <gtk/gtk.h>
 
-#define appWins app.windows
-#define appMainWin app.windows.main
-#define appConf app.config
-#define appInp app.inputs
-#define appInpDataset app.inputs.inpDataset
-#define appInpNbIn app.inputs.inpNbIn
-#define appInpNbOut app.inputs.inpNbOut
-#define appInpSplitTrain app.inputs.inpSplitTrain
-#define appInpSplitEval app.inputs.inpSplitEval
-#define appInpSplitValid app.inputs.inpSplitValid
-#define appTextBoxes app.textboxes
-#define appTextBoxDataset app.textboxes.txtDataset
-#define appTextBoxEval app.textboxes.txtEval
+#define appWins (app.windows)
+#define appMainWin (app.windows.main)
+#define appConf (app.config)
+#define appInp (app.inputs)
+#define appInpDataset (app.inputs.inpDataset)
+#define appInpNbIn (app.inputs.inpNbIn)
+#define appInpNbOut (app.inputs.inpNbOut)
+#define appInpSplitTrain (app.inputs.inpSplitTrain)
+#define appInpSplitEval (app.inputs.inpSplitEval)
+#define appInpSplitValid (app.inputs.inpSplitValid)
+#define appTextBoxes (app.textboxes)
+#define appTextBoxDataset (app.textboxes.txtDataset)
+#define appTextBoxEval (app.textboxes.txtEval)
 
 typedef struct GUIWindows {
 
@@ -86,6 +86,9 @@ typedef struct GUI {
   // GTK application and its G version
   GtkApplication* gtkApp;
   GApplication* gApp;
+
+  // The GDataset
+  GDataSet dataset;
 
 } GUI;
 
@@ -185,3 +188,6 @@ GUI GUICreate(
 
 // Main function of the application
 int GUIMain(void);
+
+// Load a GDataset into the application from the file at 'path'
+void LoadGDataset(const char* path);

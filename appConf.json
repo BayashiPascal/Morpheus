@@ -1,8 +1,8 @@
 {
-  "inpDataset":"",
-  "inpNbIn":"",
-  "inpNbOut":"",
-  "inpSplitTrain":"",
-  "inpSplitValid":"",
-  "inpSplitEval":""
+  "inpDataset":"/home/bayashi/GitHub/Morpheus/abalone.json",
+  "inpNbIn":"1",
+  "inpNbOut":"2",
+  "inpSplitTrain":"3",
+  "inpSplitValid":"4",
+  "inpSplitEval":"5"
 }

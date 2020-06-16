@@ -24,7 +24,38 @@ gboolean CbBtnDatasetClicked(
   (void)btn;
   (void)user_data;
 
-  printf("btnDataset clicked\n");
+  GtkWidget* dialog;
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+  gint res;
+
+  dialog = \
+    gtk_file_chooser_dialog_new(
+      "Select the GDataSet file",
+      GTK_WINDOW(app.windows.main),
+      action,
+      "_Cancel",
+      GTK_RESPONSE_CANCEL,
+      "_Open",
+      GTK_RESPONSE_ACCEPT,
+      NULL);
+
+  res = gtk_dialog_run(GTK_DIALOG (dialog));
+  if (res == GTK_RESPONSE_ACCEPT) {
+    char* filename = NULL;
+    GtkFileChooser* chooser = GTK_FILE_CHOOSER(dialog);
+    filename = gtk_file_chooser_get_filename(chooser);
+
+    gtk_entry_set_text(
+      appInpDataset,
+      filename);
+
+    // Load the dataset
+    LoadGDataset(filename);
+
+    g_free(filename);
+  }
+
+  gtk_widget_destroy (dialog);
 
   // Return true to stop the callback chain
   return TRUE;
@@ -37,10 +68,15 @@ gboolean CbInpDatasetChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpDataset changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpDataset");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;
@@ -53,10 +89,15 @@ gboolean CbInpNbInChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpNbIn changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpNbIn");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;
@@ -69,10 +110,15 @@ gboolean CbInpNbOutChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpNbOut changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpNbOut");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;
@@ -85,10 +131,15 @@ gboolean CbInpSplitTrainChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpSplitTrain changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpSplitTrain");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;
@@ -101,10 +152,15 @@ gboolean CbInpSplitValidChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpSplitValid changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpSplitValid");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;
@@ -117,10 +173,15 @@ gboolean CbInpSplitEvalChanged(
    gpointer user_data) {
 
   // Unused argument
-  (void)inp;
   (void)user_data;
 
-  printf("inpSplitEval changed\n");
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpSplitEval");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
 
   // Return true to stop the callback chain
   return TRUE;

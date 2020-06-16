@@ -72,6 +72,7 @@ void GUIFree(void) {
 
   // Free memory
   GUIFreeConf();
+  GDataSetFreeStatic(&(app.dataset));
 
 }
 
@@ -431,12 +432,6 @@ void GUILoadConfig(void) {
 
   }
 
-  // Init the values in the GUI with the values in the config
-  // TODO
-
-  // Reload the dataset if possible
-  // TODO
-
 }
 
 // Save the current parameters in the config file
@@ -578,13 +573,6 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   JSONNode* inp =
     JSONProperty(
       appConf.config,
-      "inpDataset");
-  gtk_entry_set_text(
-    appInpDataset,
-    JSONLblVal(inp));
-  inp =
-    JSONProperty(
-      appConf.config,
       "inpNbIn");
   gtk_entry_set_text(
     appInpNbIn,
@@ -617,6 +605,15 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpSplitEval,
     JSONLblVal(inp));
+
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpDataset");
+  gtk_entry_set_text(
+    appInpDataset,
+    JSONLblVal(inp));
+  LoadGDataset(JSONLblVal(inp));
 
 }
 
@@ -679,6 +676,9 @@ GUI GUICreate(
 
 #endif
 
+  // Initialise the dataset
+  app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+
   // Init the runtime configuration
   GUIInitConf(
     argc,
@@ -727,5 +727,47 @@ int GUIMain(void) {
 
   // Return the status code
   return status;
+
+}
+
+// Load a GDataset into the application from the file at 'path'
+void LoadGDataset(const char* path) {
+
+  if (path != NULL) {
+
+    FILE* fp =
+      fopen(
+        path,
+        "r");
+
+    if (fp != NULL) {
+
+      bool ret =
+        GDataSetLoad(
+          &(app.dataset),
+          fp);
+
+      if (ret == FALSE) {
+
+        app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+
+      }
+
+      fclose(fp);
+
+    } else {
+
+      app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+
+    }
+
+  } else {
+
+    app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+
+  }
+
+  // TODO Display the dataset
+  printf("nb sample %ld\n",GDSGetSize(&(app.dataset)));
 
 }
