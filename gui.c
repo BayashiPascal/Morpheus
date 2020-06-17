@@ -6,6 +6,9 @@ PBErr* AppErr = &thePBErr;
 // Declare the global instance of the application
 GUI app;
 
+// Display the current dataset in the text box of the dataset tab
+void DisplayGDataset(void);
+
 // Include the callbacks
 #include "gui-callbacks.c"
 
@@ -72,7 +75,10 @@ void GUIFree(void) {
 
   // Free memory
   GUIFreeConf();
-  GDataSetFreeStatic(&(app.dataset));
+  GDataSetVecFloatFreeStatic(&(app.dataset));
+  if (appNeuranet != NULL) {
+    NeuraNetFree(&appNeuranet);
+  }
 
 }
 
@@ -148,6 +154,18 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     btnShuffle,
     "clicked",
     G_CALLBACK(CbBtnShuffleClicked),
+    NULL);
+
+  // Set the callback on the 'clicked' event of btnSplit
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnSplit");
+  GtkWidget* btnSplit = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnSplit,
+    "clicked",
+    G_CALLBACK(CbBtnSplitClicked),
     NULL);
 
   // Set the callback on the 'changed' event of inpDataset
@@ -605,7 +623,6 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpSplitEval,
     JSONLblVal(inp));
-
   inp =
     JSONProperty(
       appConf.config,
@@ -613,7 +630,6 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpDataset,
     JSONLblVal(inp));
-  LoadGDataset(JSONLblVal(inp));
 
 }
 
@@ -635,11 +651,11 @@ void GUIInitTextBoxes(GtkBuilder* const gtkBuilder) {
 #endif
 
   // Get the GtkWidget for the text boxes
-  appTextBoxDataset = GTK_ENTRY(
+  appTextBoxDataset = GTK_TEXT_VIEW(
     gtk_builder_get_object(
       gtkBuilder,
       "txtDataset"));
-  appTextBoxEval = GTK_ENTRY(
+  appTextBoxEval = GTK_TEXT_VIEW(
     gtk_builder_get_object(
       gtkBuilder,
       "txtEval"));
@@ -677,7 +693,10 @@ GUI GUICreate(
 #endif
 
   // Initialise the dataset
-  app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+  *appDataset = GDataSetVecFloatCreateStatic();
+
+  // Initialise the neuranet
+  appNeuranet = NULL;
 
   // Init the runtime configuration
   GUIInitConf(
@@ -743,13 +762,13 @@ void LoadGDataset(const char* path) {
     if (fp != NULL) {
 
       bool ret =
-        GDataSetLoad(
+        GDSLoad(
           &(app.dataset),
           fp);
 
       if (ret == FALSE) {
 
-        app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+        app.dataset = GDataSetVecFloatCreateStatic();
 
       }
 
@@ -757,17 +776,173 @@ void LoadGDataset(const char* path) {
 
     } else {
 
-      app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+      app.dataset = GDataSetVecFloatCreateStatic();
 
     }
 
   } else {
 
-    app.dataset = GDataSetCreateStatic(GDataSetType_VecFloat);
+    app.dataset = GDataSetVecFloatCreateStatic();
 
   }
 
-  // TODO Display the dataset
-  printf("nb sample %ld\n",GDSGetSize(&(app.dataset)));
+  // Display the dataset
+  DisplayGDataset();
+
+}
+
+// Display the current dataset in the text box of the dataset tab
+void DisplayGDataset(void) {
+
+  // Get the text buffer to display info about the dataset
+  GtkTextBuffer* txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxDataset));
+
+  // Empty the text buffer
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+
+  // Display the dataset info
+
+  const char* name = GDSName(appDataset);
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    name,
+    strlen(name));
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    "\n",
+    1);
+
+  const char* desc = GDSDesc(appDataset);
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    desc,
+    strlen(desc));
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    "\n",
+    1);
+
+  char buffer[100];
+  sprintf(
+    buffer,
+    "%ld samples\n",
+    GDSGetSize(appDataset));
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    buffer,
+    strlen(buffer));
+
+  if (GDSGetNbCat(appDataset) > 1) {
+
+    char* strSplit = "Split: ";
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      strSplit,
+      strlen(strSplit));
+    for (
+      int iCat = 0;
+      iCat < GDSGetNbCat(appDataset);
+      ++iCat) {
+
+      if (iCat > 0) {
+
+        gtk_text_buffer_insert_at_cursor(
+          txtBuffer,
+          "/",
+          1);
+
+      }
+      long sizeCat =
+        GDSGetSizeCat(
+          appDataset,
+          iCat);
+      sprintf(
+        buffer,
+        "%ld",
+        sizeCat);
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        buffer,
+        strlen(buffer));
+
+    }
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      "\n",
+      1);
+
+  } else {
+
+    char* strSplit = "No split\n";
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      strSplit,
+      strlen(strSplit));
+
+  }
+
+  // Display the samples
+  GDSResetAll(appDataset);
+  for (
+    int iCat = 0;
+    iCat < GDSGetNbCat(appDataset);
+    ++iCat) {
+
+    sprintf(
+      buffer,
+      " - Category %d -\n",
+      iCat);
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      buffer,
+      strlen(buffer));
+
+    long iSample = 0;
+    do {
+
+      sprintf(
+        buffer,
+        "#%05ld: ",
+        iSample);
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        buffer,
+        strlen(buffer));
+
+      VecFloat* sample =
+        GDSGetSample(
+          appDataset,
+          iCat);
+
+      for (
+        int iCol = 0;
+        iCol < VecGetDim(sample);
+        ++iCol) {
+
+      sprintf(
+        buffer,
+        " %+08.3f ",
+        VecGet(sample,iCol));
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        buffer,
+        strlen(buffer));
+
+      }
+
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        "\n",
+        1);
+
+      ++iSample;
+
+    } while (GDSStepSample(appDataset, iCat));
+
+  }
 
 }

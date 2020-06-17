@@ -197,7 +197,49 @@ gboolean CbBtnShuffleClicked(
   (void)btn;
   (void)user_data;
 
-  printf("btnShuffle clicked\n");
+  // Shuffle all the categories of the dataset
+  GDSShuffleAll(appDataset);
+
+  // Display the dataset
+  DisplayGDataset();
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'clicked' event on btnSplit
+gboolean CbBtnSplitClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  // Get the splitting
+  int nbTrain = atoi(gtk_entry_get_text(appInpSplitTrain));
+  int nbValid = atoi(gtk_entry_get_text(appInpSplitValid));
+  int nbEval = atoi(gtk_entry_get_text(appInpSplitEval));
+
+  // If the splitting is correct
+  if (
+    nbTrain > 0 &&
+    nbValid > 0 &&
+    nbEval > 0 &&
+    nbTrain + nbValid + nbEval <= GDSGetSize(appDataset)) {
+
+    // Split the dataset
+    VecShort3D split = VecShortCreateStatic3D();
+    VecSet(&split, 0, nbTrain);
+    VecSet(&split, 1, nbValid);
+    VecSet(&split, 2, nbEval);
+    GDSSplit(appDataset, (VecShort*)&split);
+
+  }
+
+  // Display the dataset
+  DisplayGDataset();
 
   // Return true to stop the callback chain
   return TRUE;
@@ -212,6 +254,14 @@ gboolean CbBtnEvalClicked(
   // Unused argument
   (void)btn;
   (void)user_data;
+
+  // TODO remove
+  FILE* fp =
+    fopen(
+      "/home/bayashi/GitHub/NeuraNet/Examples/Abalone/bestnn.txt",
+      "r");
+  (void)NNLoad(&appNeuranet, fp);
+  fclose(fp);
 
   printf("btnEval clicked\n");
 
@@ -268,8 +318,6 @@ gboolean CbAppWindowResizeEvent(
   (void)event;
   (void)user_data;
 
-  printf("resize\n");
-
   // Return false to continue the callback chain
   return FALSE;
 
@@ -296,11 +344,21 @@ void CbGtkAppActivate(
   // Init the inputs
   GUIInitInputs(gtkBuilder);
 
+  // Init the text boxes
+  GUIInitTextBoxes(gtkBuilder);
+
   // Init the windows
   GUIInitWindows(gtkBuilder);
 
   // Init the callbacks
   GUIInitCallbacks(gtkBuilder);
+
+  // Try to reload the last used dataset
+  JSONNode* inp =
+    JSONProperty(
+      appConf.config,
+      "inpDataset");
+  LoadGDataset(JSONLblVal(inp));
 
   // Start the timer
   unsigned int timerIntervalMs = 1000;

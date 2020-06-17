@@ -2,6 +2,7 @@
 #include "pbjson.h"
 #include "pbmath.h"
 #include "gdataset.h"
+#include "neuranet.h"
 #include <gtk/gtk.h>
 
 #define appWins (app.windows)
@@ -17,6 +18,8 @@
 #define appTextBoxes (app.textboxes)
 #define appTextBoxDataset (app.textboxes.txtDataset)
 #define appTextBoxEval (app.textboxes.txtEval)
+#define appDataset (&(app.dataset))
+#define appNeuranet (app.neuranet)
 
 typedef struct GUIWindows {
 
@@ -59,10 +62,10 @@ typedef struct GUIInputs {
 typedef struct GUITextboxes {
 
   // Text boxes of the dataset tab
-  GtkEntry* txtDataset;
+  GtkTextView* txtDataset;
 
   // Text boxes of the eval tab
-  GtkEntry* txtEval;
+  GtkTextView* txtEval;
 
 } GUITextBoxes;
 
@@ -88,7 +91,10 @@ typedef struct GUI {
   GApplication* gApp;
 
   // The GDataset
-  GDataSet dataset;
+  GDataSetVecFloat dataset;
+
+  // The NeuraNet
+  NeuraNet* neuranet;
 
 } GUI;
 
@@ -113,6 +119,11 @@ gboolean CbBtnSelectDatasetClicked(
 
 // Callback function for the 'clicked' event on btnShuffle
 gboolean CbBtnShuffleClicked(
+  GtkButton* btn,
+    gpointer user_data);
+
+// Callback function for the 'clicked' event on btnSplit
+gboolean CbBtnSplitClicked(
   GtkButton* btn,
     gpointer user_data);
 
