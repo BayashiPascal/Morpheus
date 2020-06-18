@@ -4,7 +4,7 @@ gboolean CbTimer(gpointer data) {
   // Unused parameter
   (void)data;
 
-  printf("Tick\n");
+  //printf("Tick\n");
 
   // Refresh all the widgets
   GUIRefreshWidgets();
@@ -62,6 +62,53 @@ gboolean CbBtnDatasetClicked(
 
 }
 
+// Callback function for the 'clicked' event on btnEvalNeuraNet
+gboolean CbBtnEvalNeuraNetClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  GtkWidget* dialog;
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+  gint res;
+
+  dialog = \
+    gtk_file_chooser_dialog_new(
+      "Select the NeuraNet file",
+      GTK_WINDOW(app.windows.main),
+      action,
+      "_Cancel",
+      GTK_RESPONSE_CANCEL,
+      "_Open",
+      GTK_RESPONSE_ACCEPT,
+      NULL);
+
+  res = gtk_dialog_run(GTK_DIALOG (dialog));
+  if (res == GTK_RESPONSE_ACCEPT) {
+    char* filename = NULL;
+    GtkFileChooser* chooser = GTK_FILE_CHOOSER(dialog);
+    filename = gtk_file_chooser_get_filename(chooser);
+
+    gtk_entry_set_text(
+      appInpEvalNeuraNet,
+      filename);
+
+    // Load the NeuraNet
+    LoadNeuraNet(filename);
+
+    g_free(filename);
+  }
+
+  gtk_widget_destroy (dialog);
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
 // Callback function for the 'changed' event on inpDataset
 gboolean CbInpDatasetChanged(
   GtkEntry* inp,
@@ -74,6 +121,27 @@ gboolean CbInpDatasetChanged(
     JSONProperty(
       appConf.config,
       "inpDataset");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpEvalNeuraNet
+gboolean CbInpEvalNeuraNetChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpEvalNeuraNet");
   JSONSetVal(
     node,
     gtk_entry_get_text(inp));
@@ -255,15 +323,174 @@ gboolean CbBtnEvalClicked(
   (void)btn;
   (void)user_data;
 
-  // TODO remove
-  FILE* fp =
-    fopen(
-      "/home/bayashi/GitHub/NeuraNet/Examples/Abalone/bestnn.txt",
-      "r");
-  (void)NNLoad(&appNeuranet, fp);
-  fclose(fp);
+  // If there is a NeuraNet loaded
+  if (appNeuranet != NULL) {
 
-  printf("btnEval clicked\n");
+    // Get the index of the category
+    int cat = 0;
+    if (gtk_toggle_button_get_active(
+      GTK_TOGGLE_BUTTON(appRadEvalTrain))) {
+
+      cat = 0;
+
+    } else if (gtk_toggle_button_get_active(
+      GTK_TOGGLE_BUTTON(appRadEvalValid))) {
+
+      cat = 1;
+
+    } else if (gtk_toggle_button_get_active(
+      GTK_TOGGLE_BUTTON(appRadEvalEval))) {
+
+      cat = 2;
+
+    }
+
+    // If the category is valid
+    if (cat < GDSGetNbCat(appDataset)) {
+
+      // If there are samples in the selected category of the
+      // current dataset
+      long sizeCat =
+        GDSGetSizeCat(
+          appDataset,
+          cat);
+      if (sizeCat > 0) {
+
+        // If the number of input and output are valid
+        JSONNode* node =
+          JSONProperty(
+            appConf.config,
+            "inpNbIn");
+        int nbInput = atoi(JSONLblVal(node));
+        node =
+          JSONProperty(
+            appConf.config,
+            "inpNbOut");
+        int nbOutput = atoi(JSONLblVal(node));
+        int sampleDim =
+          VecGet(
+            GDSSampleDim(appDataset),
+            0);
+        if (
+          nbInput > 0 &&
+          nbOutput > 0 &&
+          nbInput + nbOutput == sampleDim &&
+          nbInput == NNGetNbInput(appNeuranet) &&
+          nbOutput == NNGetNbOutput(appNeuranet)) {
+
+          // Empty the text buffer
+          GtkTextBuffer* txtBuffer =
+            gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+          gtk_text_buffer_set_text(
+            txtBuffer,
+            "\0",
+            -1);
+
+          // Init variables for the evaluation
+          VecFloat* vecIn = VecFloatCreate(nbInput);
+          VecFloat* vecOut = VecFloatCreate(nbOutput);
+
+          // Loop on the samples
+          GDSReset(
+            appDataset,
+            cat);
+          bool flagStep = TRUE;
+          do {
+
+            // Get the sample
+            const VecFloat* sample =
+              GDSGetSample(
+                appDataset,
+                cat);
+
+            // Init the input of the NeuraNet
+            for (
+              int i = nbInput;
+              i--;) {
+
+              float val =
+                VecGet(
+                  sample,
+                  i);
+              VecSet(
+                vecIn,
+                i,
+                val);
+
+            }
+
+            // Eval the NeuraNet
+            NNEval(
+              appNeuranet,
+              vecIn,
+              vecOut);
+
+            // Display the result
+            VecPrint(
+              vecOut,
+              stdout);
+            printf("\n");
+
+            // Step to the next sample
+            flagStep =
+              GDSStepSample(
+                appDataset,
+                cat);
+
+          } while (flagStep);
+
+          // Free memory
+          free(vecIn);
+          free(vecOut);
+
+        } else {
+
+
+          GtkTextBuffer* txtBuffer =
+            gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+          char* msg = "The number of input/output is invalid.\n";
+          gtk_text_buffer_insert_at_cursor(
+            txtBuffer,
+            msg,
+            strlen(msg));
+
+        }
+
+      } else {
+
+        GtkTextBuffer* txtBuffer =
+          gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+        char* msg = "The selected category is empty.\n";
+        gtk_text_buffer_insert_at_cursor(
+          txtBuffer,
+          msg,
+          strlen(msg));
+
+      }
+
+    } else {
+
+      GtkTextBuffer* txtBuffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+      char* msg = "The dataset has not been splitted.\n";
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        msg,
+        strlen(msg));
+
+    }
+
+  } else {
+
+    GtkTextBuffer* txtBuffer =
+      gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+    char* msg = "Please load a NeuraNet.\n";
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      msg,
+      strlen(msg));
+
+  }
 
   // Return true to stop the callback chain
   return TRUE;
@@ -359,6 +586,13 @@ void CbGtkAppActivate(
       appConf.config,
       "inpDataset");
   LoadGDataset(JSONLblVal(inp));
+
+  // Try to reload the last used neuranet
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpEvalNeuraNet");
+  LoadNeuraNet(JSONLblVal(inp));
 
   // Start the timer
   unsigned int timerIntervalMs = 1000;

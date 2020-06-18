@@ -4,5 +4,6 @@
   "inpNbOut":"1",
   "inpSplitTrain":"3000",
   "inpSplitValid":"1000",
-  "inpSplitEval":"177"
+  "inpSplitEval":"177",
+  "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone.nn"
 }

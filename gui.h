@@ -10,11 +10,15 @@
 #define appConf (app.config)
 #define appInp (app.inputs)
 #define appInpDataset (app.inputs.inpDataset)
+#define appInpEvalNeuraNet (app.inputs.inpEvalNeuraNet)
 #define appInpNbIn (app.inputs.inpNbIn)
 #define appInpNbOut (app.inputs.inpNbOut)
 #define appInpSplitTrain (app.inputs.inpSplitTrain)
 #define appInpSplitEval (app.inputs.inpSplitEval)
 #define appInpSplitValid (app.inputs.inpSplitValid)
+#define appRadEvalTrain (app.inputs.radEvalTrain)
+#define appRadEvalValid (app.inputs.radEvalValid)
+#define appRadEvalEval (app.inputs.radEvalEval)
 #define appTextBoxes (app.textboxes)
 #define appTextBoxDataset (app.textboxes.txtDataset)
 #define appTextBoxEval (app.textboxes.txtEval)
@@ -51,11 +55,15 @@ typedef struct GUIInputs {
 
   // Inputs of the dataset tab
   GtkEntry* inpDataset;
+  GtkEntry* inpEvalNeuraNet;
   GtkEntry* inpNbIn;
   GtkEntry* inpNbOut;
   GtkEntry* inpSplitTrain;
   GtkEntry* inpSplitEval;
   GtkEntry* inpSplitValid;
+  GtkRadioButton* radEvalTrain;
+  GtkRadioButton* radEvalValid;
+  GtkRadioButton* radEvalEval;
 
 } GUIInputs;
 
@@ -202,3 +210,6 @@ int GUIMain(void);
 
 // Load a GDataset into the application from the file at 'path'
 void LoadGDataset(const char* path);
+
+// Load a NeuraNet into the application from the file at 'path'
+void LoadNeuraNet(const char* path);

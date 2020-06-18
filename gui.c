@@ -144,6 +144,18 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     G_CALLBACK(CbBtnDatasetClicked),
     NULL);
 
+  // Set the callback on the 'clicked' event of btnEvalNeuraNet
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnEvalNeuraNet");
+  GtkWidget* btnEvalNeuraNet = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnEvalNeuraNet,
+    "clicked",
+    G_CALLBACK(CbBtnEvalNeuraNetClicked),
+    NULL);
+
   // Set the callback on the 'clicked' event of btnShuffle
   obj =
     gtk_builder_get_object(
@@ -178,6 +190,18 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     inpDataset,
     "changed",
     G_CALLBACK(CbInpDatasetChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpEvalNeuraNet
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpEvalNeuraNet");
+  GtkWidget* inpEvalNeuraNet = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpEvalNeuraNet,
+    "changed",
+    G_CALLBACK(CbInpEvalNeuraNetChanged),
     NULL);
 
   // Set the callback on the 'changed' event of inpNbIn
@@ -419,9 +443,10 @@ void GUILoadConfig(void) {
 
   // Check the content of the configuration file
   // If there are missing parameters, create them
-  char* paramNames[6] = {
+  char* paramNames[7] = {
 
     "inpDataset",
+    "inpEvalNeuraNet",
     "inpNbIn",
     "inpNbOut",
     "inpSplitTrain",
@@ -432,7 +457,7 @@ void GUILoadConfig(void) {
 
   for (
     int iParam = 0;
-    iParam < 6;
+    iParam < 7;
     ++iParam) {
 
     JSONNode* node =
@@ -566,6 +591,10 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "inpDataset"));
+  appInpEvalNeuraNet = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpEvalNeuraNet"));
   appInpNbIn = GTK_ENTRY(
     gtk_builder_get_object(
       gtkBuilder,
@@ -586,6 +615,18 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "inpSplitEval"));
+  appRadEvalTrain = GTK_RADIO_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "radEvalTrain"));
+  appRadEvalValid = GTK_RADIO_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "radEvalValid"));
+  appRadEvalEval = GTK_RADIO_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "radEvalEval"));
 
   // Init the widgets with the value in the config file
   JSONNode* inp =
@@ -629,6 +670,13 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
       "inpDataset");
   gtk_entry_set_text(
     appInpDataset,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpEvalNeuraNet");
+  gtk_entry_set_text(
+    appInpEvalNeuraNet,
     JSONLblVal(inp));
 
 }
@@ -763,12 +811,12 @@ void LoadGDataset(const char* path) {
 
       bool ret =
         GDSLoad(
-          &(app.dataset),
+          appDataset,
           fp);
 
       if (ret == FALSE) {
 
-        app.dataset = GDataSetVecFloatCreateStatic();
+        *appDataset = GDataSetVecFloatCreateStatic();
 
       }
 
@@ -776,13 +824,13 @@ void LoadGDataset(const char* path) {
 
     } else {
 
-      app.dataset = GDataSetVecFloatCreateStatic();
+      *appDataset = GDataSetVecFloatCreateStatic();
 
     }
 
   } else {
 
-    app.dataset = GDataSetVecFloatCreateStatic();
+    *appDataset = GDataSetVecFloatCreateStatic();
 
   }
 
@@ -790,6 +838,33 @@ void LoadGDataset(const char* path) {
   DisplayGDataset();
 
 }
+
+// Load a NeuraNet into the application from the file at 'path'
+void LoadNeuraNet(const char* path) {
+
+  if (path != NULL) {
+
+    FILE* fp =
+      fopen(
+        path,
+        "r");
+
+    if (fp != NULL) {
+
+      bool ret =
+        NNLoad(
+          &appNeuranet,
+          fp);
+      (void)ret;
+
+      fclose(fp);
+
+    }
+
+  }
+
+}
+
 
 // Display the current dataset in the text box of the dataset tab
 void DisplayGDataset(void) {
