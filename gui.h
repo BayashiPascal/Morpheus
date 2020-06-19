@@ -19,11 +19,21 @@
 #define appRadEvalTrain (app.inputs.radEvalTrain)
 #define appRadEvalValid (app.inputs.radEvalValid)
 #define appRadEvalEval (app.inputs.radEvalEval)
+#define appBtnEval (app.inputs.btnEval)
+#define appBtnEvalNeuraNet (app.inputs.btnEvalNeuraNet)
+#define appBtnDataset (app.inputs.btnDataset)
+#define appBtnShuffle (app.inputs.btnShuffle)
+#define appBtnSplit (app.inputs.btnSplit)
 #define appTextBoxes (app.textboxes)
 #define appTextBoxDataset (app.textboxes.txtDataset)
 #define appTextBoxEval (app.textboxes.txtEval)
 #define appDataset (&(app.dataset))
 #define appNeuranet (app.neuranet)
+#define appMutex (app.mutexThread)
+#define appEvalResults (&(app.evalResults))
+#define threadEvalNbInput (app.threadEvalData.nbInput)
+#define threadEvalNbOutput (app.threadEvalData.nbOutput)
+#define threadEvalCat (app.threadEvalData.cat)
 
 typedef struct GUIWindows {
 
@@ -64,6 +74,11 @@ typedef struct GUIInputs {
   GtkRadioButton* radEvalTrain;
   GtkRadioButton* radEvalValid;
   GtkRadioButton* radEvalEval;
+  GtkButton* btnEval;
+  GtkButton* btnEvalNeuraNet;
+  GtkButton* btnDataset;
+  GtkButton* btnShuffle;
+  GtkButton* btnSplit;
 
 } GUIInputs;
 
@@ -76,6 +91,30 @@ typedef struct GUITextboxes {
   GtkTextView* txtEval;
 
 } GUITextBoxes;
+
+typedef struct ThreadEvalData {
+
+  // Number of input and output in the sample
+  int nbInput;
+  int nbOutput;
+
+  // Used category in the GDataset
+  int cat;
+
+} ThreadEvalData;
+
+typedef struct ThreadEvalResult {
+
+  // Sample
+  const VecFloat* sample;
+
+  // Output of NeuraNetEval
+  VecFloat* result;
+
+  // Index of the sample evaluated
+  long iSample;
+
+} ThreadEvalResult;
 
 typedef struct GUI {
 
@@ -103,6 +142,15 @@ typedef struct GUI {
 
   // The NeuraNet
   NeuraNet* neuranet;
+
+  // Mutex for the thread workers
+  GMutex mutexThread;
+
+  // Data for the thread eval
+  ThreadEvalData threadEvalData;
+
+  // GSet of ThreadEvalResult
+  GSet evalResults;
 
 } GUI;
 
@@ -213,3 +261,12 @@ void LoadGDataset(const char* path);
 
 // Load a NeuraNet into the application from the file at 'path'
 void LoadNeuraNet(const char* path);
+
+// Thread worker for the evaluation
+gpointer ThreadWorkerEval(gpointer data);
+
+// Function to process the data from the thread worker for evaluation
+gboolean processThreadWorkerEval(gpointer data);
+
+// Function to process the end of the thread worker for evaluation
+gboolean endThreadWorkerEval(gpointer data);

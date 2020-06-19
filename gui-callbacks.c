@@ -323,37 +323,45 @@ gboolean CbBtnEvalClicked(
   (void)btn;
   (void)user_data;
 
+  // Empty the text buffer
+  GtkTextBuffer* txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+
   // If there is a NeuraNet loaded
   if (appNeuranet != NULL) {
 
     // Get the index of the category
-    int cat = 0;
+    threadEvalCat = 0;
     if (gtk_toggle_button_get_active(
       GTK_TOGGLE_BUTTON(appRadEvalTrain))) {
 
-      cat = 0;
+      threadEvalCat = 0;
 
     } else if (gtk_toggle_button_get_active(
       GTK_TOGGLE_BUTTON(appRadEvalValid))) {
 
-      cat = 1;
+      threadEvalCat = 1;
 
     } else if (gtk_toggle_button_get_active(
       GTK_TOGGLE_BUTTON(appRadEvalEval))) {
 
-      cat = 2;
+      threadEvalCat = 2;
 
     }
 
     // If the category is valid
-    if (cat < GDSGetNbCat(appDataset)) {
+    if (threadEvalCat < GDSGetNbCat(appDataset)) {
 
       // If there are samples in the selected category of the
       // current dataset
       long sizeCat =
         GDSGetSizeCat(
           appDataset,
-          cat);
+          threadEvalCat);
       if (sizeCat > 0) {
 
         // If the number of input and output are valid
@@ -361,90 +369,50 @@ gboolean CbBtnEvalClicked(
           JSONProperty(
             appConf.config,
             "inpNbIn");
-        int nbInput = atoi(JSONLblVal(node));
+        threadEvalNbInput = atoi(JSONLblVal(node));
         node =
           JSONProperty(
             appConf.config,
             "inpNbOut");
-        int nbOutput = atoi(JSONLblVal(node));
+        threadEvalNbOutput = atoi(JSONLblVal(node));
         int sampleDim =
           VecGet(
             GDSSampleDim(appDataset),
             0);
         if (
-          nbInput > 0 &&
-          nbOutput > 0 &&
-          nbInput + nbOutput == sampleDim &&
-          nbInput == NNGetNbInput(appNeuranet) &&
-          nbOutput == NNGetNbOutput(appNeuranet)) {
+          threadEvalNbInput > 0 &&
+          threadEvalNbOutput > 0 &&
+          threadEvalNbInput + threadEvalNbOutput == sampleDim &&
+          threadEvalNbInput == NNGetNbInput(appNeuranet) &&
+          threadEvalNbOutput == NNGetNbOutput(appNeuranet)) {
 
-          // Empty the text buffer
-          GtkTextBuffer* txtBuffer =
-            gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
-          gtk_text_buffer_set_text(
-            txtBuffer,
-            "\0",
-            -1);
+          // Lock the button to avoid running another evaluation
+          // before this one ended
+          gtk_widget_set_sensitive(
+            GTK_WIDGET(appBtnEvalNeuraNet),
+            FALSE);
+          gtk_widget_set_sensitive(
+            GTK_WIDGET(appBtnEval),
+            FALSE);
+          gtk_widget_set_sensitive(
+            GTK_WIDGET(appBtnDataset),
+            FALSE);
+          gtk_widget_set_sensitive(
+            GTK_WIDGET(appBtnShuffle),
+            FALSE);
+          gtk_widget_set_sensitive(
+            GTK_WIDGET(appBtnSplit),
+            FALSE);
 
-          // Init variables for the evaluation
-          VecFloat* vecIn = VecFloatCreate(nbInput);
-          VecFloat* vecOut = VecFloatCreate(nbOutput);
-
-          // Loop on the samples
-          GDSReset(
-            appDataset,
-            cat);
-          bool flagStep = TRUE;
-          do {
-
-            // Get the sample
-            const VecFloat* sample =
-              GDSGetSample(
-                appDataset,
-                cat);
-
-            // Init the input of the NeuraNet
-            for (
-              int i = nbInput;
-              i--;) {
-
-              float val =
-                VecGet(
-                  sample,
-                  i);
-              VecSet(
-                vecIn,
-                i,
-                val);
-
-            }
-
-            // Eval the NeuraNet
-            NNEval(
-              appNeuranet,
-              vecIn,
-              vecOut);
-
-            // Display the result
-            VecPrint(
-              vecOut,
-              stdout);
-            printf("\n");
-
-            // Step to the next sample
-            flagStep =
-              GDSStepSample(
-                appDataset,
-                cat);
-
-          } while (flagStep);
-
-          // Free memory
-          free(vecIn);
-          free(vecOut);
+          // Start a thread
+          GThread* thread =
+            g_thread_new(
+              "threadEval",
+              ThreadWorkerEval,
+              NULL);
+          g_thread_unref(thread);
 
         } else {
-
 
           GtkTextBuffer* txtBuffer =
             gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
