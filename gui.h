@@ -23,6 +23,7 @@
 #define appBtnEvalNeuraNet (app.inputs.btnEvalNeuraNet)
 #define appBtnDataset (app.inputs.btnDataset)
 #define appBtnShuffle (app.inputs.btnShuffle)
+#define appProgEval (app.inputs.progEval)
 #define appBtnSplit (app.inputs.btnSplit)
 #define appTextBoxes (app.textboxes)
 #define appTextBoxDataset (app.textboxes.txtDataset)
@@ -34,6 +35,7 @@
 #define threadEvalNbInput (app.threadEvalData.nbInput)
 #define threadEvalNbOutput (app.threadEvalData.nbOutput)
 #define threadEvalCat (app.threadEvalData.cat)
+#define threadEvalCompletion (app.threadEvalData.completion)
 
 typedef struct GUIWindows {
 
@@ -76,6 +78,7 @@ typedef struct GUIInputs {
   GtkButton* btnDataset;
   GtkButton* btnShuffle;
   GtkButton* btnSplit;
+  GtkProgressBar* progEval;
 
 } GUIInputs;
 
@@ -97,6 +100,9 @@ typedef struct ThreadEvalData {
 
   // Used category in the GDataset
   int cat;
+
+  // Percentage of completion (in 0.0, 1.0)
+  float completion;
 
 } ThreadEvalData;
 

@@ -329,6 +329,12 @@ gboolean CbBtnEvalClicked(
     "\0",
     -1);
 
+  // Reset the progress bar
+  threadEvalCompletion = 0.0;
+  gtk_progress_bar_set_fraction(
+    appProgEval,
+    threadEvalCompletion);
+
   // If there is a NeuraNet loaded
   if (appNeuranet != NULL) {
 

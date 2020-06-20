@@ -12,6 +12,10 @@ gpointer ThreadWorkerEval(gpointer data) {
     threadEvalCat);
   bool flagStep = TRUE;
   long iSample = 0;
+  long nbSamples =
+    GDSGetSizeCat(
+      appDataset,
+      threadEvalCat);
   do {
 
     // Allocate memory for the result
@@ -68,6 +72,11 @@ gpointer ThreadWorkerEval(gpointer data) {
       GDSStepSample(
         appDataset,
         threadEvalCat);
+
+    // Update the percentage of completion
+    threadEvalCompletion =
+      ((float)iSample) /
+      ((float)nbSamples);
 
   } while (flagStep);
 
@@ -169,6 +178,11 @@ gboolean processThreadWorkerEval(gpointer data) {
     free(evalResult);
 
   }
+
+  // Update the progress bar
+  gtk_progress_bar_set_fraction(
+    appProgEval,
+    threadEvalCompletion);
 
   // Unlock the mutex
   g_mutex_unlock(&appMutex);

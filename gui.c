@@ -635,6 +635,10 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "btnSplit"));
+  appProgEval = GTK_PROGRESS_BAR(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "progEval"));
 
   // Init the widgets with the value in the config file
   JSONNode* inp =
