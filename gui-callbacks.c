@@ -335,6 +335,9 @@ gboolean CbBtnEvalClicked(
     appProgEval,
     threadEvalCompletion);
 
+  // Reset the result dataset
+  GDSRemoveAllSample(threadEvalDataset);
+
   // If there is a NeuraNet loaded
   if (appNeuranet != NULL) {
 

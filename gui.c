@@ -61,7 +61,8 @@ void GUIFree(void) {
 
   // Free memory
   GUIFreeConf();
-  GDataSetVecFloatFreeStatic(&(app.dataset));
+  GDataSetVecFloatFreeStatic(appDataset);
+  GDataSetVecFloatFreeStatic(threadEvalDataset);
   if (appNeuranet != NULL) {
 
     NeuraNetFree(&appNeuranet);
@@ -758,8 +759,14 @@ GUI GUICreate(
   // Initialise the neuranet
   appNeuranet = NULL;
 
-  // Initialise the set of ThreadEvalResult
+  // Initialise the result structure for the evaluation
   *appEvalResults = GSetCreateStatic();
+  *threadEvalDataset = GDataSetVecFloatCreateStatic();
+  threadEvalDataset->_dataSet._sampleDim = VecShortCreate(1);
+  VecSet(
+    threadEvalDataset->_dataSet._sampleDim,
+    0,
+    1);
 
   // Init the runtime configuration
   GUIInitConf(

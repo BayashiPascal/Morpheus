@@ -36,6 +36,7 @@
 #define threadEvalNbOutput (app.threadEvalData.nbOutput)
 #define threadEvalCat (app.threadEvalData.cat)
 #define threadEvalCompletion (app.threadEvalData.completion)
+#define threadEvalDataset (&(app.threadEvalData.dataset))
 
 typedef struct GUIWindows {
 
@@ -103,6 +104,9 @@ typedef struct ThreadEvalData {
 
   // Percentage of completion (in 0.0, 1.0)
   float completion;
+
+  // Dataset to analyse the result of evaluation
+  GDataSetVecFloat dataset;
 
 } ThreadEvalData;
 

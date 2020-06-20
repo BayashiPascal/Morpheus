@@ -106,17 +106,15 @@ gboolean processThreadWorkerEval(gpointer data) {
   // Lock the mutex
   g_mutex_lock(&appMutex);
 
-  // Process the data from the thread worker
+  // Get the text buffer to display results
   GtkTextBuffer* txtBuffer =
     gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
 
+  // Process the data from the thread worker
   while (GSetNbElem(appEvalResults) > 0) {
 
     // Pop out the result for one sample
     ThreadEvalResult* evalResult = GSetPop(appEvalResults);
-
-    // Variable to calculate the difference with the correct output
-    float diff = 0.0;
 
     // Display the result
     char buffer[100];
@@ -147,34 +145,55 @@ gboolean processThreadWorkerEval(gpointer data) {
         buffer,
         strlen(buffer));
 
+      // Update the result with the distance to the correct value
       float valOut =
         VecGet(
           evalResult->sample,
           threadEvalNbInput + iCol);
-      diff +=
-        pow(
-          val - valOut,
-          2.0);
+      float diff = fabs(val - valOut);
+      VecSet(
+        evalResult->result,
+        iCol,
+        diff);
 
     }
 
-    diff = sqrt(diff);
-    sprintf(
-      buffer,
-      "| %+08.3f ",
-      diff);
     gtk_text_buffer_insert_at_cursor(
       txtBuffer,
-      buffer,
-      strlen(buffer));
+      "|",
+      1);
+
+    for (
+      int iCol = 0;
+      iCol < VecGetDim(evalResult->result);
+      ++iCol) {
+
+      float val =
+        VecGet(
+          evalResult->result,
+          iCol);
+      sprintf(
+        buffer,
+        " %+08.3f ",
+        val);
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        buffer,
+        strlen(buffer));
+
+    }
 
     gtk_text_buffer_insert_at_cursor(
       txtBuffer,
       "\n",
       1);
 
+    // Save the result vector for later analyis
+    GDSAddSample(
+      threadEvalDataset,
+      evalResult->result);
+
     // Free the memory used by the result
-    free(evalResult->result);
     free(evalResult);
 
   }
@@ -199,6 +218,66 @@ gboolean endThreadWorkerEval(gpointer data) {
 
   // Lock the mutex
   g_mutex_lock(&appMutex);
+
+  // Variables for the analysis
+  GtkTextBuffer* txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxEval));
+  char buffer[100];
+  VecShort2D indices = VecShortCreateStatic2D();
+  char* msg = "\nX: abs(truth-pred)\n";
+  gtk_text_buffer_insert_at_cursor(
+    txtBuffer,
+    msg,
+    strlen(msg));
+
+  // Analysis of the result
+  VecFloat* means = GDSGetMean(threadEvalDataset);
+  VecFloat* maxs = GDSGetMax(threadEvalDataset);
+  for (
+    int iOut = 0;
+    iOut < VecGetDim(maxs);
+    ++iOut) {
+
+    float mean =
+      VecGet(
+        means,
+        iOut);
+    float max =
+      VecGet(
+        maxs,
+        iOut);
+    VecSet(
+      &indices,
+      0,
+      iOut);
+    VecSet(
+      &indices,
+      1,
+      iOut);
+    float variance =
+      GDSGetCovariance(
+        threadEvalDataset,
+        &indices);
+
+    // Display the result
+    sprintf(
+      buffer,
+      "Output#%d | Max(X): %+08.3f | " \
+      "Avg(X): %+08.3f | Var(X): %+08.3f \n",
+      iOut,
+      max,
+      mean,
+      variance);
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      buffer,
+      strlen(buffer));
+
+  }
+
+  // Free memory
+  VecFree(&means);
+  VecFree(&maxs);
 
   // Unlock the button to run another evaluation
   gtk_widget_set_sensitive(
