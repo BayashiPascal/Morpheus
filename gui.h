@@ -56,9 +56,6 @@ typedef struct GUIConfig {
   // Path to the configuration file
   char* configFilePath;
 
-  // Timer interval
-  unsigned int timerInterval;
-
 } GUIConfig;
 
 typedef struct GUIInputs {
@@ -130,9 +127,6 @@ typedef struct GUI {
   // Windows
   GUIWindows windows;
 
-  // Timer
-  unsigned int timerId;
-
   // GTK application and its G version
   GtkApplication* gtkApp;
   GApplication* gApp;
@@ -156,9 +150,6 @@ typedef struct GUI {
 
 // Declare the global instance of the application
 extern GUI app;
-
-// Callback for the timer
-gboolean CbTimer(gpointer data);
 
 // Function to init the windows
 void GUIInitWindows(GtkBuilder* const gtkBuilder);
@@ -240,9 +231,6 @@ void GUIInitTextBoxes(GtkBuilder* const gtkBuilder);
 
 // Free memory used by the drawables
 void GUIFreeDrawables(void);
-
-// Function to refresh the content of the control widget
-void GUIRefreshWidgetControl(void);
 
 // Function to refresh the content of all graphical widgets
 //(cameras and control)

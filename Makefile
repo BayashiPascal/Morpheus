@@ -48,7 +48,7 @@ main.o: main.c gui.h Makefile
 clean:
 	rm -f *.o main
 
-gui.o: gui.c gui-callbacks.c gui.h Makefile
+gui.o: gui.c gui-callbacks.c gui-threads.c gui.h Makefile
 	$(COMPILER) $(BUILD_ARG) $(GTK_BUILD_ARG) -c gui.c
 
 run:

@@ -1,20 +1,3 @@
-// Callback for the timer
-gboolean CbTimer(gpointer data) {
-
-  // Unused parameter
-  (void)data;
-
-  //printf("Tick\n");
-
-  // Refresh all the widgets
-  GUIRefreshWidgets();
-
-  // Return TRUE to keep the timer alive
-  // It will be killed by GUIFree
-  return TRUE;
-
-}
-
 // Callback function for the 'clicked' event on btnDataset
 gboolean CbBtnDatasetClicked(
   GtkButton* btn,
@@ -41,6 +24,7 @@ gboolean CbBtnDatasetClicked(
 
   res = gtk_dialog_run(GTK_DIALOG (dialog));
   if (res == GTK_RESPONSE_ACCEPT) {
+
     char* filename = NULL;
     GtkFileChooser* chooser = GTK_FILE_CHOOSER(dialog);
     filename = gtk_file_chooser_get_filename(chooser);
@@ -53,6 +37,7 @@ gboolean CbBtnDatasetClicked(
     LoadGDataset(filename);
 
     g_free(filename);
+
   }
 
   gtk_widget_destroy (dialog);
@@ -88,6 +73,7 @@ gboolean CbBtnEvalNeuraNetClicked(
 
   res = gtk_dialog_run(GTK_DIALOG (dialog));
   if (res == GTK_RESPONSE_ACCEPT) {
+
     char* filename = NULL;
     GtkFileChooser* chooser = GTK_FILE_CHOOSER(dialog);
     filename = gtk_file_chooser_get_filename(chooser);
@@ -100,6 +86,7 @@ gboolean CbBtnEvalNeuraNetClicked(
     LoadNeuraNet(filename);
 
     g_free(filename);
+
   }
 
   gtk_widget_destroy (dialog);
@@ -299,10 +286,21 @@ gboolean CbBtnSplitClicked(
 
     // Split the dataset
     VecShort3D split = VecShortCreateStatic3D();
-    VecSet(&split, 0, nbTrain);
-    VecSet(&split, 1, nbValid);
-    VecSet(&split, 2, nbEval);
-    GDSSplit(appDataset, (VecShort*)&split);
+    VecSet(
+      &split,
+      0,
+      nbTrain);
+    VecSet(
+      &split,
+      1,
+      nbValid);
+    VecSet(
+      &split,
+      2,
+      nbEval);
+    GDSSplit(
+      appDataset,
+      (VecShort*)&split);
 
   }
 
@@ -561,13 +559,6 @@ void CbGtkAppActivate(
       appConf.config,
       "inpEvalNeuraNet");
   LoadNeuraNet(JSONLblVal(inp));
-
-  // Start the timer
-  unsigned int timerIntervalMs = 1000;
-  app.timerId = g_timeout_add (
-    timerIntervalMs,
-    CbTimer,
-    NULL);
 
   // Free memory used by the GTK builder
   g_object_unref(G_OBJECT(gtkBuilder));
