@@ -169,6 +169,30 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     G_CALLBACK(CbBtnSplitClicked),
     NULL);
 
+  // Set the callback on the 'clicked' event of btnTrainNeuraNet
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainNeuraNet");
+  GtkWidget* btnTrainNeuraNet = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnTrainNeuraNet,
+    "clicked",
+    G_CALLBACK(CbBtnTrainNeuraNetClicked),
+    NULL);
+
+  // Set the callback on the 'clicked' event of btnTrainStart
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainStart");
+  GtkWidget* btnTrainStart = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnTrainStart,
+    "clicked",
+    G_CALLBACK(CbBtnTrainStartClicked),
+    NULL);
+
   // Set the callback on the 'changed' event of inpDataset
   obj =
     gtk_builder_get_object(
@@ -251,6 +275,90 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     inpSplitEval,
     "changed",
     G_CALLBACK(CbInpSplitEvalChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainNeuraNet
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNeuraNet");
+  GtkWidget* inpTrainNeuraNet = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainNeuraNet,
+    "changed",
+    G_CALLBACK(CbInpTrainNeuraNetChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainNbEpoch
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbEpoch");
+  GtkWidget* inpTrainNbEpoch = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainNbEpoch,
+    "changed",
+    G_CALLBACK(CbInpTrainNbEpochChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainDepth
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainDepth");
+  GtkWidget* inpTrainDepth = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainDepth,
+    "changed",
+    G_CALLBACK(CbInpTrainDepthChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainNbElite
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbElite");
+  GtkWidget* inpTrainNbElite = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainNbElite,
+    "changed",
+    G_CALLBACK(CbInpTrainNbEliteChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainSizePool
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainSizePool");
+  GtkWidget* inpTrainSizePool = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainSizePool,
+    "changed",
+    G_CALLBACK(CbInpTrainSizePoolChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainBestVal
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainBestVal");
+  GtkWidget* inpTrainBestVal = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainBestVal,
+    "changed",
+    G_CALLBACK(CbInpTrainBestValChanged),
+    NULL);
+
+  // Set the callback on the 'changed' event of inpTrainNbThread
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbThread");
+  GtkWidget* inpTrainNbThread = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpTrainNbThread,
+    "changed",
+    G_CALLBACK(CbInpTrainNbThreadChanged),
     NULL);
 
   // Set the callback on the 'clicked' event of btnEval
@@ -432,7 +540,7 @@ void GUILoadConfig(void) {
 
   // Check the content of the configuration file
   // If there are missing parameters, create them
-  char* paramNames[7] = {
+  char* paramNames[14] = {
 
     "inpDataset",
     "inpEvalNeuraNet",
@@ -440,13 +548,20 @@ void GUILoadConfig(void) {
     "inpNbOut",
     "inpSplitTrain",
     "inpSplitValid",
-    "inpSplitEval"
+    "inpSplitEval",
+    "inpTrainNeuraNet",
+    "inpTrainNbEpoch",
+    "inpTrainDepth",
+    "inpTrainNbElite",
+    "inpTrainSizePool",
+    "inpTrainBestVal",
+    "inpTrainNbThread"
 
   };
 
   for (
     int iParam = 0;
-    iParam < 7;
+    iParam < 14;
     ++iParam) {
 
     JSONNode* node =
@@ -604,6 +719,34 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "inpSplitEval"));
+  appInpTrainNeuraNet = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNeuraNet"));
+  appInpTrainNbEpoch = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbEpoch"));
+  appInpTrainDepth = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainDepth"));
+  appInpTrainNbElite = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbElite"));
+  appInpTrainSizePool = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainSizePool"));
+  appInpTrainBestVal = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainBestVal"));
+  appInpTrainNbThread = GTK_ENTRY(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "inpTrainNbThread"));
   appRadEvalTrain = GTK_RADIO_BUTTON(
     gtk_builder_get_object(
       gtkBuilder,
@@ -640,6 +783,14 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "progEval"));
+  appProgTrainTotal = GTK_PROGRESS_BAR(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "progTrainTotal"));
+  appProgTrainDepth = GTK_PROGRESS_BAR(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "progTrainDepth"));
 
   // Init the widgets with the value in the config file
   JSONNode* inp =
@@ -691,6 +842,55 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpEvalNeuraNet,
     JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNeuraNet");
+  gtk_entry_set_text(
+    appInpTrainNeuraNet,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbEpoch");
+  gtk_entry_set_text(
+    appInpTrainNbEpoch,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainDepth");
+  gtk_entry_set_text(
+    appInpTrainDepth,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbElite");
+  gtk_entry_set_text(
+    appInpTrainNbElite,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainSizePool");
+  gtk_entry_set_text(
+    appInpTrainSizePool,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainBestVal");
+  gtk_entry_set_text(
+    appInpTrainBestVal,
+    JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbThread");
+  gtk_entry_set_text(
+    appInpTrainNbThread,
+    JSONLblVal(inp));
 
 }
 
@@ -720,6 +920,22 @@ void GUIInitTextBoxes(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "txtEval"));
+  appTextBoxTrainMsgDepth = GTK_TEXT_VIEW(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtTrainMsgDepth"));
+  appTextBoxTrainNeuraNetDepth = GTK_TEXT_VIEW(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtTrainNeuraNetDepth"));
+  appTextBoxTrainMsgTotal = GTK_TEXT_VIEW(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtTrainMsgTotal"));
+  appTextBoxTrainNeuraNetTotal = GTK_TEXT_VIEW(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "txtTrainNeuraNetTotal"));
 
 }
 

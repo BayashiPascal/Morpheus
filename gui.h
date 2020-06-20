@@ -16,6 +16,13 @@
 #define appInpSplitTrain (app.inputs.inpSplitTrain)
 #define appInpSplitEval (app.inputs.inpSplitEval)
 #define appInpSplitValid (app.inputs.inpSplitValid)
+#define appInpTrainNeuraNet (app.inputs.inpTrainNeuraNet)
+#define appInpTrainNbEpoch (app.inputs.inpTrainNbEpoch)
+#define appInpTrainDepth (app.inputs.inpTrainDepth)
+#define appInpTrainNbElite (app.inputs.inpTrainNbElite)
+#define appInpTrainSizePool (app.inputs.inpTrainSizePool)
+#define appInpTrainBestVal (app.inputs.inpTrainBestVal)
+#define appInpTrainNbThread (app.inputs.inpTrainNbThread)
 #define appRadEvalTrain (app.inputs.radEvalTrain)
 #define appRadEvalValid (app.inputs.radEvalValid)
 #define appRadEvalEval (app.inputs.radEvalEval)
@@ -23,11 +30,19 @@
 #define appBtnEvalNeuraNet (app.inputs.btnEvalNeuraNet)
 #define appBtnDataset (app.inputs.btnDataset)
 #define appBtnShuffle (app.inputs.btnShuffle)
+#define appBtnTrainNeuraNet (app.inputs.btnTrainNeuraNet)
+#define appBtnTrainStart (app.inputs.btnTrainStart)
 #define appProgEval (app.inputs.progEval)
+#define appProgTrainDepth (app.inputs.progTrainDepth)
+#define appProgTrainTotal (app.inputs.progTrainTotal)
 #define appBtnSplit (app.inputs.btnSplit)
 #define appTextBoxes (app.textboxes)
 #define appTextBoxDataset (app.textboxes.txtDataset)
 #define appTextBoxEval (app.textboxes.txtEval)
+#define appTextBoxTrainMsgTotal (app.textboxes.txtTrainMsgTotal)
+#define appTextBoxTrainNeuraNetTotal (app.textboxes.txtTrainNeuraNetTotal)
+#define appTextBoxTrainMsgDepth (app.textboxes.txtTrainMsgDepth)
+#define appTextBoxTrainNeuraNetDepth (app.textboxes.txtTrainNeuraNetDepth)
 #define appDataset (&(app.dataset))
 #define appNeuranet (app.neuranet)
 #define appMutex (app.mutexThread)
@@ -37,6 +52,8 @@
 #define threadEvalCat (app.threadEvalData.cat)
 #define threadEvalCompletion (app.threadEvalData.completion)
 #define threadEvalDataset (&(app.threadEvalData.dataset))
+#define threadTrainCompletionTotal (app.threadTrainData.completionTotal)
+#define threadTrainCompletionDepth (app.threadTrainData.completionDepth)
 
 typedef struct GUIWindows {
 
@@ -71,6 +88,13 @@ typedef struct GUIInputs {
   GtkEntry* inpSplitTrain;
   GtkEntry* inpSplitEval;
   GtkEntry* inpSplitValid;
+  GtkEntry* inpTrainNeuraNet;
+  GtkEntry* inpTrainNbEpoch;
+  GtkEntry* inpTrainDepth;
+  GtkEntry* inpTrainNbElite;
+  GtkEntry* inpTrainSizePool;
+  GtkEntry* inpTrainBestVal;
+  GtkEntry* inpTrainNbThread;
   GtkRadioButton* radEvalTrain;
   GtkRadioButton* radEvalValid;
   GtkRadioButton* radEvalEval;
@@ -79,7 +103,11 @@ typedef struct GUIInputs {
   GtkButton* btnDataset;
   GtkButton* btnShuffle;
   GtkButton* btnSplit;
+  GtkButton* btnTrainNeuraNet;
+  GtkButton* btnTrainStart;
   GtkProgressBar* progEval;
+  GtkProgressBar* progTrainTotal;
+  GtkProgressBar* progTrainDepth;
 
 } GUIInputs;
 
@@ -90,6 +118,12 @@ typedef struct GUITextboxes {
 
   // Text boxes of the eval tab
   GtkTextView* txtEval;
+
+  // Text boxes of the train tab
+  GtkTextView* txtTrainMsgTotal;
+  GtkTextView* txtTrainNeuraNetTotal;
+  GtkTextView* txtTrainMsgDepth;
+  GtkTextView* txtTrainNeuraNetDepth;
 
 } GUITextBoxes;
 
@@ -109,6 +143,14 @@ typedef struct ThreadEvalData {
   GDataSetVecFloat dataset;
 
 } ThreadEvalData;
+
+typedef struct ThreadTrainData {
+
+  // Percentage of completion (in 0.0, 1.0)
+  float completionTotal;
+  float completionDepth;
+
+} ThreadTrainData;
 
 typedef struct ThreadEvalResult {
 
@@ -152,6 +194,9 @@ typedef struct GUI {
 
   // Data for the thread eval
   ThreadEvalData threadEvalData;
+
+  // Data for the thread train
+  ThreadTrainData threadTrainData;
 
   // GSet of ThreadEvalResult
   GSet evalResults;

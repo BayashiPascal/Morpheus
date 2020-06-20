@@ -96,6 +96,215 @@ gboolean CbBtnEvalNeuraNetClicked(
 
 }
 
+// Callback function for the 'clicked' event on btnTrainNeuraNet
+gboolean CbBtnTrainNeuraNetClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  GtkWidget* dialog;
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+  gint res;
+
+  dialog = \
+    gtk_file_chooser_dialog_new(
+      "Select the NeuraNet file",
+      GTK_WINDOW(app.windows.main),
+      action,
+      "_Cancel",
+      GTK_RESPONSE_CANCEL,
+      "_Open",
+      GTK_RESPONSE_ACCEPT,
+      NULL);
+
+  res = gtk_dialog_run(GTK_DIALOG (dialog));
+  if (res == GTK_RESPONSE_ACCEPT) {
+
+    char* filename = NULL;
+    GtkFileChooser* chooser = GTK_FILE_CHOOSER(dialog);
+    filename = gtk_file_chooser_get_filename(chooser);
+
+    // Try to open the file to check if it's correct
+    FILE* fp =
+      fopen(
+        filename,
+        "w");
+    if (fp != NULL) {
+
+      gtk_entry_set_text(
+        appInpTrainNeuraNet,
+        filename);
+      fclose(fp);
+
+    }
+
+    g_free(filename);
+
+  }
+
+  gtk_widget_destroy (dialog);
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'clicked' event on btnTrainStart
+gboolean CbBtnTrainStartClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  // Empty the text buffers
+  GtkTextBuffer* txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgDepth));
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+  txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainNeuraNetDepth));
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+  txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+  txtBuffer =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainNeuraNetTotal));
+  gtk_text_buffer_set_text(
+    txtBuffer,
+    "\0",
+    -1);
+
+  // Reset the progress bars
+  threadTrainCompletionTotal = 0.0;
+  gtk_progress_bar_set_fraction(
+    appProgTrainTotal,
+    threadTrainCompletionTotal);
+  threadTrainCompletionDepth = 0.0;
+  gtk_progress_bar_set_fraction(
+    appProgTrainDepth,
+    threadTrainCompletionDepth);
+
+  // If the dataset has at least 2 categories
+  if (GDSGetNbCat(appDataset) > 1) {
+
+    // If there are samples in the train and valid category of the
+    // current dataset
+    long sizeCatTrain =
+      GDSGetSizeCat(
+        appDataset,
+        0);
+    long sizeCatValid =
+      GDSGetSizeCat(
+        appDataset,
+        1);
+    if (
+      sizeCatTrain > 0 &&
+      sizeCatValid > 0) {
+
+      // TODO
+      // If the parameters of the traning are valid
+      /*JSONNode* node =
+        JSONProperty(
+          appConf.config,
+          "inpNbIn");
+      threadEvalNbInput = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpNbOut");
+      threadEvalNbOutput = atoi(JSONLblVal(node));
+      int sampleDim =
+        VecGet(
+          GDSSampleDim(appDataset),
+          0);
+      if (
+        threadEvalNbInput > 0 &&
+        threadEvalNbOutput > 0 &&
+        threadEvalNbInput + threadEvalNbOutput == sampleDim &&
+        threadEvalNbInput == NNGetNbInput(appNeuranet) &&
+        threadEvalNbOutput == NNGetNbOutput(appNeuranet)) {
+
+        // Lock the button to avoid running another training
+        // before this one ended
+        gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnEvalNeuraNet),
+          FALSE);
+        gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnEval),
+          FALSE);
+        gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnDataset),
+          FALSE);
+        gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnShuffle),
+          FALSE);
+        gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnSplit),
+          FALSE);
+
+        // Start a thread
+        GThread* thread =
+          g_thread_new(
+            "threadEval",
+            ThreadWorkerEval,
+            NULL);
+        g_thread_unref(thread);
+
+      } else {
+
+        GtkTextBuffer* txtBuffer =
+          gtk_text_view_get_buffer(
+            GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+        char* msg = "The parameters for training are invalid.\n";
+        gtk_text_buffer_insert_at_cursor(
+          txtBuffer,
+          msg,
+          strlen(msg));
+
+      }*/
+
+    } else {
+
+      GtkTextBuffer* txtBuffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+      char* msg = "The train and/or valid category is empty.\n";
+      gtk_text_buffer_insert_at_cursor(
+        txtBuffer,
+        msg,
+        strlen(msg));
+
+    }
+
+  } else {
+
+    GtkTextBuffer* txtBuffer =
+      gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+    char* msg = "The dataset has not been splitted.\n";
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      msg,
+      strlen(msg));
+
+  }
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
 // Callback function for the 'changed' event on inpDataset
 gboolean CbInpDatasetChanged(
   GtkEntry* inp,
@@ -579,3 +788,151 @@ void CbGtkAppActivate(
   gtk_main();
 
 }
+
+// Callback function for the 'changed' event on inpTrainNeuraNet
+gboolean CbInpTrainNeuraNetChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNeuraNet");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainNbEpoch
+gboolean CbInpTrainNbEpochChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbEpoch");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainDepth
+gboolean CbInpTrainDepthChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainDepth");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainNbElite
+gboolean CbInpTrainNbEliteChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbElite");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainSizePool
+gboolean CbInpTrainSizePoolChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainSizePool");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainBestVal
+gboolean CbInpTrainBestValChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainBestVal");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'changed' event on inpTrainNbThread
+gboolean CbInpTrainNbThreadChanged(
+  GtkEntry* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpTrainNbThread");
+  JSONSetVal(
+    node,
+    gtk_entry_get_text(inp));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+

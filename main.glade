@@ -332,7 +332,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="btnTraainNeuraNet">
+                      <object class="GtkButton" id="btnTrainNeuraNet">
                         <property name="label" translatable="yes">Select</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -590,7 +590,7 @@
                           <object class="GtkLabel" id="lblTrainEtcTotal">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">// ::</property>
+                            <property name="label" translatable="yes">d:h:m:s</property>
                             <property name="width_chars">20</property>
                           </object>
                           <packing>
@@ -612,7 +612,7 @@
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkTextView" id="textTrainMsgTotal">
+                          <object class="GtkTextView" id="txtTrainMsgTotal">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
@@ -632,7 +632,7 @@
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkTextView" id="textTrainNeuraNetTotal">
+                          <object class="GtkTextView" id="txtTrainNeuraNetTotal">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
@@ -702,7 +702,7 @@
                           <object class="GtkLabel" id="lblTrainEtcDepth">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">// ::</property>
+                            <property name="label" translatable="yes">d:h:m:s</property>
                             <property name="width_chars">20</property>
                           </object>
                           <packing>
@@ -724,7 +724,7 @@
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkTextView" id="textTrainMsgDepth">
+                          <object class="GtkTextView" id="txtTrainMsgDepth">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
@@ -744,7 +744,7 @@
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkTextView" id="textTrainNeuraNetDepth">
+                          <object class="GtkTextView" id="txtTrainNeuraNetDepth">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
