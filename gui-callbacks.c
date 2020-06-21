@@ -260,9 +260,9 @@ gboolean CbBtnTrainStartClicked(
           GDSSampleDim(appDataset),
           0);
       if (
-        threadEvalNbInput > 0 &&
-        threadEvalNbOutput > 0 &&
-        threadEvalNbInput + threadEvalNbOutput == sampleDim &&
+        threadTrainNbIn > 0 &&
+        threadTrainNbOut > 0 &&
+        threadTrainNbIn + threadTrainNbOut == sampleDim &&
         threadTrainNbEpoch > 0 &&
         threadTrainDepth > 0 &&
         threadTrainNbElite > 0 &&
@@ -277,7 +277,9 @@ gboolean CbBtnTrainStartClicked(
         threadTrainCurBestVal = threadTrainBestVal - 1000.0;
         threadTrainBestTopo.bases = NULL;
         threadTrainBestTopo.links = NULL;
-        *threadTrainTopos = GSetCreateStatic();
+        *threadTrainNNToBeTrained = GSetCreateStatic();
+        *threadTrainNNUnderTraining = GSetCreateStatic();
+        *threadTrainNNTrained = GSetCreateStatic();
 
         // Lock the button to avoid running another training
         // before this one ended
@@ -980,4 +982,3 @@ gboolean CbInpTrainNbThreadChanged(
   return TRUE;
 
 }
-

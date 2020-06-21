@@ -66,7 +66,9 @@
 #define threadTrainNbOut (app.threadTrainData.nbOutput)
 #define threadTrainCurBestVal (app.threadTrainData.curBestVal)
 #define threadTrainBestTopo (app.threadTrainData.bestTopo)
-#define threadTrainTopos (&(app.threadTrainData.topos))
+#define threadTrainNNToBeTrained (&(app.threadTrainData.NNToBeTrained))
+#define threadTrainNNUnderTraining (&(app.threadTrainData.NNUnderTraining))
+#define threadTrainNNTrained (&(app.threadTrainData.NNTrained))
 
 typedef struct GUIWindows {
 
@@ -164,6 +166,13 @@ typedef struct ThreadTrainTopology {
 
 } ThreadTrainTopology;
 
+typedef struct NeuraNetPod {
+
+  NeuraNet* nn;
+  float val;
+
+} NeuraNetPod;
+
 typedef struct ThreadTrainData {
 
   // Percentage of completion (in 0.0, 1.0)
@@ -188,7 +197,13 @@ typedef struct ThreadTrainData {
   ThreadTrainTopology bestTopo;
 
   // GSet of NeuraNet to be trained
-  GSet topos;
+  GSet NNToBeTrained;
+
+  // GSet of NeuraNet under training
+  GSet NNUnderTraining;
+
+  // GSet of trained NeuraNet
+  GSet NNTrained;
 
 } ThreadTrainData;
 

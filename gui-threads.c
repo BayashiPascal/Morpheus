@@ -319,19 +319,19 @@ NeuraNet* CreateNewTopo(
   const int iOut) {
 
   // Create the NeuraNet to train the new topology
-  long nbMaxHidden = depth * threadEvalNbOutput;
-  long nbMaxBases = iLink;
+  long nbMaxHidden = depth * threadTrainNbOut;
+  long nbMaxBases = 1 + iLink;
   long nbMaxLinks = nbMaxBases;
   NeuraNet* nn =
     NeuraNetCreate(
-      threadEvalNbInput,
-      threadEvalNbOutput,
-      nbMaxHidden, 
+      threadTrainNbIn,
+      threadTrainNbOut,
+      nbMaxHidden,
       nbMaxBases,
       nbMaxLinks);
 
   // If there is a current best topology
-  if (threadTrainBestTopo.links != NULL) {
+  /*if (threadTrainBestTopo.links != NULL) {
 
     // Copy the best topo
     for (
@@ -377,7 +377,6 @@ NeuraNet* CreateNewTopo(
       nn->_links,
       VecGetDim(threadTrainBestTopo.links) + 2,
       iOut);
-    
 
   // Else, there is no current best topo
   } else {
@@ -396,7 +395,7 @@ NeuraNet* CreateNewTopo(
       2,
       iOut);
 
-  }
+  }*/
 
   // TODO set the mutable link
 
@@ -405,10 +404,89 @@ NeuraNet* CreateNewTopo(
 
 }
 
+// Thread worker for the training of one NeuraNet
+// data's type is NeuraNet*
+gpointer ThreadWorkerGenAlg(gpointer data) {
+
+  // Convert the argument
+  NeuraNetPod* pod = data;
+  NeuraNet* nn = pod->nn;
+  float* nnVal = &(pod->val);
+
+  // Train the NeuraNet
+  sleep(1);
+  (void)nn;
+  *nnVal = rand() * 100.0;
+
+  // Lock the mutex
+  g_mutex_lock(&appMutex);
+
+  // Move the trained NeuraNet to the set of trained NeuraNet
+  GSetRemoveFirst(
+    threadTrainNNUnderTraining,
+    pod);
+  GSetAppend(
+    threadTrainNNTrained,
+    pod);
+
+  // Unlock the mutex
+  g_mutex_unlock(&appMutex);
+
+  return NULL;
+
+}
+
+// Update the best topology with the result of the training of one NeuraNet
+void UpdateBestTopo(const NeuraNetPod* const pod) {
+
+  // Lock the mutex
+  g_mutex_lock(&appMutex);
+
+  // Update the best value
+  threadTrainCurBestVal = pod->val;
+
+  // Update the best topology
+  if (threadTrainBestTopo.links != NULL) {
+
+    VecFree(&(threadTrainBestTopo.links));
+
+  }
+  threadTrainBestTopo.links = VecClone(pod->nn->_links);
+  if (threadTrainBestTopo.bases != NULL) {
+
+    VecFree(&(threadTrainBestTopo.bases));
+
+  }
+  threadTrainBestTopo.bases = VecClone(pod->nn->_bases);
+
+  // Send a message to the user
+  GtkTextBuffer* txtBufferDepth =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgDepth));
+  char msg[100];
+  sprintf(
+    msg,
+    "Improved topology with value: %f.\n",
+    pod->val);
+  gtk_text_buffer_insert_at_cursor(
+    txtBufferDepth,
+    msg,
+    strlen(msg));
+  // TODO print the topology
+
+  // Unlock the mutex
+  g_mutex_unlock(&appMutex);
+
+}
+
 // Thread worker for the training
 gpointer ThreadWorkerTrain(gpointer data) {
 
   (void)data;
+
+  // Get the text buffers
+  GtkTextBuffer* txtBufferTotal =
+    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+  char msg[100];
 
   // Loop on the depth
   for (
@@ -417,22 +495,32 @@ gpointer ThreadWorkerTrain(gpointer data) {
     threadTrainCurBestVal < threadTrainBestVal;
     ++iDepth) {
 
+    // Send a message to the user
+    sprintf(
+      msg,
+      "Create the topologies for depth #%d.\n",
+      iDepth);
+    gtk_text_buffer_insert_at_cursor(
+      txtBufferTotal,
+      msg,
+      strlen(msg));
+
     // TODO Loop on the id of new link at the current depth
     for (
       int iLink = 0;
-      iLink < threadEvalNbInput * threadEvalNbOutput;
+      iLink < threadTrainNbIn * threadTrainNbOut;
       ++iLink) {
 
       // TODO Loop on the source of the new link
       for (
         int iIn = 0;
-        iIn < threadEvalNbInput + iDepth * threadEvalNbOutput;
+        iIn < threadTrainNbIn + iDepth * threadTrainNbOut;
         ++iIn) {
 
         // Loop on the destination of the new link
         for (
           int iOut = 0;
-          iOut < threadEvalNbOutput;
+          iOut < threadTrainNbOut;
           ++iOut) {
 
           // TODO Create the NeuraNet to train the new topology
@@ -444,9 +532,14 @@ gpointer ThreadWorkerTrain(gpointer data) {
               iOut);
 
           // Add the NeuraNet to the set of topologies to train
+          NeuraNetPod* pod =
+            PBErrMalloc(
+              AppErr,
+              sizeof(NeuraNetPod));
+          pod->nn = nn;
           GSetAppend(
-            threadTrainTopos,
-            nn);
+            threadTrainNNToBeTrained,
+            pod);
 
         }
 
@@ -454,41 +547,148 @@ gpointer ThreadWorkerTrain(gpointer data) {
 
     }
 
+    // Memorize the total number of topologies to train
+    long nbTopoToTrain = GSetNbElem(threadTrainNNToBeTrained);
+
+    // Send a message to the user
+    sprintf(
+      msg,
+      "Max number of topologies to train: %ld.\n",
+      nbTopoToTrain);
+    gtk_text_buffer_insert_at_cursor(
+      txtBufferTotal,
+      msg,
+      strlen(msg));
+
     // While there are topologies to train
-    while (GSetNbElem(threadTrainTopos) > 0) {
+    while (GSetNbElem(threadTrainNNToBeTrained) > 0) {
+printf("train\n");
+      // Flush the trained topologies
+      while (GSetNbElem(threadTrainNNTrained) > 0) {
+printf("flush trained\n");
+        NeuraNetPod* pod = GSetPop(threadTrainNNTrained);
+
+        // Update the best topology if necessary
+        if (pod->val > threadTrainCurBestVal) {
+
+          UpdateBestTopo(pod);
+
+        }
+
+        NeuraNetFree(&(pod->nn));
+        free(pod);
+
+      }
 
       // If the current best is better than the requested best
       if (threadTrainCurBestVal > threadTrainBestVal) {
 
-        // Flush the remaining topologies
-        while (GSetNbElem(threadTrainTopos) > 0) {
+        // Send a message to the user
+        sprintf(
+          msg,
+          "Best value reached. Skip the last %ld topologies.\n",
+          GSetNbElem(threadTrainNNToBeTrained));
+        gtk_text_buffer_insert_at_cursor(
+          txtBufferTotal,
+          msg,
+          strlen(msg));
 
-          NeuraNet* nn = GSetPop(threadTrainTopos);
-          NeuraNetFree(&nn);
+        // Flush the remaining topologies
+        while (GSetNbElem(threadTrainNNToBeTrained) > 0) {
+printf("flush remaining\n");
+          NeuraNetPod* pod = GSetPop(threadTrainNNToBeTrained);
+          NeuraNetFree(&(pod->nn));
+          free(pod);
+          --nbTopoToTrain;
 
         }
 
       }
 
-      // TODO While there is a thread available to train a topology
+      // While there is a thread available to train a topology
       // and there are topologies to train
+      while (
+        GSetNbElem(threadTrainNNUnderTraining) < threadTrainNbThread &&
+        GSetNbElem(threadTrainNNToBeTrained) > 0) {
+printf("add thread\n");
+        // Lock the mutex
+        g_mutex_lock(&appMutex);
 
         // TODO Create the thread to train the topology
+        NeuraNetPod* pod = GSetPop(threadTrainNNToBeTrained);
+        GSetAppend(
+          threadTrainNNUnderTraining,
+          pod);
+        GThread* thread =
+          g_thread_new(
+            "threadGenAlg",
+            ThreadWorkerGenAlg,
+            (gpointer)pod);
+        g_thread_unref(thread);
 
-      // Slow down this thread
+        // Unlock the mutex
+        g_mutex_unlock(&appMutex);
+
+      }
+
+      // Update the progress bar for the 'depth' section
+      threadTrainCompletionDepth = 1.0 -
+        ((float)GSetNbElem(threadTrainNNToBeTrained) +
+        (float)GSetNbElem(threadTrainNNUnderTraining)) /
+        ((float)nbTopoToTrain);
+      gtk_progress_bar_set_fraction(
+        appProgTrainDepth,
+        threadTrainCompletionDepth);
+
+      // Slow down the main training thread
       sleep(1);
 
     }
 
-    // TODO While there are threads training topologies
-    while (0) {
+    // While there are threads training topologies
+    while (GSetNbElem(threadTrainNNUnderTraining) > 0) {
+printf("wait last thread\n");
+      // Update the progress bar for the 'depth' section
+      threadTrainCompletionDepth = 1.0 -
+        ((float)GSetNbElem(threadTrainNNToBeTrained) +
+        (float)GSetNbElem(threadTrainNNUnderTraining)) /
+        ((float)nbTopoToTrain);
+      gtk_progress_bar_set_fraction(
+        appProgTrainDepth,
+        threadTrainCompletionDepth);
 
-      // Wait for the thread to end
+      // Wait for the child training threads to end
       sleep(1);
 
     }
 
-    // Update the progress bar and message for the 'total' section
+    // Flush the trained topologies
+    while (GSetNbElem(threadTrainNNTrained) > 0) {
+printf("flush last trained\n");
+      NeuraNetPod* pod = GSetPop(threadTrainNNTrained);
+
+      // Update the best topology if necessary
+      if (pod->val > threadTrainCurBestVal) {
+
+        UpdateBestTopo(pod);
+
+      }
+
+      NeuraNetFree(&(pod->nn));
+      free(pod);
+
+    }
+
+    // TODO Update the progress bar and message for the 'total' section
+    threadTrainCompletionTotal =
+      ((float)iDepth) / ((float)threadTrainDepth);
+    gtk_progress_bar_set_fraction(
+      appProgTrainTotal,
+      threadTrainCompletionTotal);
+    threadTrainCompletionDepth = 1.0;
+    gtk_progress_bar_set_fraction(
+      appProgTrainDepth,
+      threadTrainCompletionDepth);
 
   }
 
