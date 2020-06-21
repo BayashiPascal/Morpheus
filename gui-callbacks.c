@@ -214,18 +214,47 @@ gboolean CbBtnTrainStartClicked(
       sizeCatTrain > 0 &&
       sizeCatValid > 0) {
 
-      // TODO
       // If the parameters of the traning are valid
-      /*JSONNode* node =
+      JSONNode* node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainNbEpoch");
+      threadTrainNbEpoch = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainDepth");
+      threadTrainDepth = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainNbElite");
+      threadTrainNbElite = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainSizePool");
+      threadTrainSizePool = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainBestVal");
+      threadTrainBestVal = atof(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpTrainNbThread");
+      threadTrainNbThread = atoi(JSONLblVal(node));
+      node =
         JSONProperty(
           appConf.config,
           "inpNbIn");
-      threadEvalNbInput = atoi(JSONLblVal(node));
+      threadTrainNbIn = atoi(JSONLblVal(node));
       node =
         JSONProperty(
           appConf.config,
           "inpNbOut");
-      threadEvalNbOutput = atoi(JSONLblVal(node));
+      threadTrainNbOut = atoi(JSONLblVal(node));
       int sampleDim =
         VecGet(
           GDSSampleDim(appDataset),
@@ -234,16 +263,29 @@ gboolean CbBtnTrainStartClicked(
         threadEvalNbInput > 0 &&
         threadEvalNbOutput > 0 &&
         threadEvalNbInput + threadEvalNbOutput == sampleDim &&
-        threadEvalNbInput == NNGetNbInput(appNeuranet) &&
-        threadEvalNbOutput == NNGetNbOutput(appNeuranet)) {
+        threadTrainNbEpoch > 0 &&
+        threadTrainDepth > 0 &&
+        threadTrainNbElite > 0 &&
+        threadTrainSizePool > threadTrainNbElite &&
+        threadTrainBestVal <= 0.0 &&
+        threadTrainNbThread > 0) {
+
+        // Raise the flag
+        appIsTraining = TRUE;
+
+        // Init the current best val and topo
+        threadTrainCurBestVal = threadTrainBestVal - 1000.0;
+        threadTrainBestTopo.bases = NULL;
+        threadTrainBestTopo.links = NULL;
+        *threadTrainTopos = GSetCreateStatic();
 
         // Lock the button to avoid running another training
         // before this one ended
         gtk_widget_set_sensitive(
-          GTK_WIDGET(appBtnEvalNeuraNet),
+          GTK_WIDGET(appBtnTrainNeuraNet),
           FALSE);
         gtk_widget_set_sensitive(
-          GTK_WIDGET(appBtnEval),
+          GTK_WIDGET(appBtnTrainStart),
           FALSE);
         gtk_widget_set_sensitive(
           GTK_WIDGET(appBtnDataset),
@@ -258,8 +300,8 @@ gboolean CbBtnTrainStartClicked(
         // Start a thread
         GThread* thread =
           g_thread_new(
-            "threadEval",
-            ThreadWorkerEval,
+            "threadTrain",
+            ThreadWorkerTrain,
             NULL);
         g_thread_unref(thread);
 
@@ -274,7 +316,7 @@ gboolean CbBtnTrainStartClicked(
           msg,
           strlen(msg));
 
-      }*/
+      }
 
     } else {
 
@@ -601,6 +643,9 @@ gboolean CbBtnEvalClicked(
           threadEvalNbInput + threadEvalNbOutput == sampleDim &&
           threadEvalNbInput == NNGetNbInput(appNeuranet) &&
           threadEvalNbOutput == NNGetNbOutput(appNeuranet)) {
+
+          // Raise the flag
+          appIsEvaluating = TRUE;
 
           // Lock the button to avoid running another evaluation
           // before this one ended

@@ -47,6 +47,8 @@
 #define appNeuranet (app.neuranet)
 #define appMutex (app.mutexThread)
 #define appEvalResults (&(app.evalResults))
+#define appIsEvaluating (app.isEvaluating)
+#define appIsTraining (app.isTraining)
 #define threadEvalNbInput (app.threadEvalData.nbInput)
 #define threadEvalNbOutput (app.threadEvalData.nbOutput)
 #define threadEvalCat (app.threadEvalData.cat)
@@ -54,6 +56,17 @@
 #define threadEvalDataset (&(app.threadEvalData.dataset))
 #define threadTrainCompletionTotal (app.threadTrainData.completionTotal)
 #define threadTrainCompletionDepth (app.threadTrainData.completionDepth)
+#define threadTrainNbEpoch (app.threadTrainData.nbEpoch)
+#define threadTrainDepth (app.threadTrainData.depth)
+#define threadTrainNbElite (app.threadTrainData.nbElite)
+#define threadTrainSizePool (app.threadTrainData.sizePool)
+#define threadTrainBestVal (app.threadTrainData.bestVal)
+#define threadTrainNbThread (app.threadTrainData.nbThread)
+#define threadTrainNbIn (app.threadTrainData.nbInput)
+#define threadTrainNbOut (app.threadTrainData.nbOutput)
+#define threadTrainCurBestVal (app.threadTrainData.curBestVal)
+#define threadTrainBestTopo (app.threadTrainData.bestTopo)
+#define threadTrainTopos (&(app.threadTrainData.topos))
 
 typedef struct GUIWindows {
 
@@ -144,11 +157,38 @@ typedef struct ThreadEvalData {
 
 } ThreadEvalData;
 
+typedef struct ThreadTrainTopology {
+
+  VecFloat* bases;
+  VecLong* links;
+
+} ThreadTrainTopology;
+
 typedef struct ThreadTrainData {
 
   // Percentage of completion (in 0.0, 1.0)
   float completionTotal;
   float completionDepth;
+
+  // Parameters for the training
+  int nbEpoch;
+  int depth;
+  int trainDepth;
+  int nbElite;
+  int sizePool;
+  float bestVal;
+  int nbThread;
+  int nbInput;
+  int nbOutput;
+
+  // Current best value
+  float curBestVal;
+
+  // Current best topology
+  ThreadTrainTopology bestTopo;
+
+  // GSet of NeuraNet to be trained
+  GSet topos;
 
 } ThreadTrainData;
 
@@ -200,6 +240,10 @@ typedef struct GUI {
 
   // GSet of ThreadEvalResult
   GSet evalResults;
+
+  // Flags to manage the lock of buttons furing eval and training
+  bool isEvaluating;
+  bool isTraining;
 
 } GUI;
 
@@ -313,3 +357,6 @@ gboolean processThreadWorkerEval(gpointer data);
 
 // Function to process the end of the thread worker for evaluation
 gboolean endThreadWorkerEval(gpointer data);
+
+// Thread worker for the training
+gpointer ThreadWorkerTrain(gpointer data);

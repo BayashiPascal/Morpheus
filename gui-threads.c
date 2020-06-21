@@ -279,26 +279,219 @@ gboolean endThreadWorkerEval(gpointer data) {
   VecFree(&means);
   VecFree(&maxs);
 
-  // Unlock the button to run another evaluation
+  // Unlock the buttons to run another evaluation
   gtk_widget_set_sensitive(
     GTK_WIDGET(appBtnEvalNeuraNet),
     TRUE);
   gtk_widget_set_sensitive(
     GTK_WIDGET(appBtnEval),
     TRUE);
-  gtk_widget_set_sensitive(
-    GTK_WIDGET(appBtnDataset),
-    TRUE);
-  gtk_widget_set_sensitive(
-    GTK_WIDGET(appBtnShuffle),
-    TRUE);
-  gtk_widget_set_sensitive(
-    GTK_WIDGET(appBtnSplit),
-    TRUE);
+  if (appIsTraining == FALSE) {
+
+    gtk_widget_set_sensitive(
+      GTK_WIDGET(appBtnDataset),
+      TRUE);
+    gtk_widget_set_sensitive(
+      GTK_WIDGET(appBtnShuffle),
+      TRUE);
+    gtk_widget_set_sensitive(
+      GTK_WIDGET(appBtnSplit),
+      TRUE);
+
+  }
+
+  // Pull down the flag
+  appIsEvaluating = FALSE;
 
   // Unlock the mutex
   g_mutex_unlock(&appMutex);
 
   return FALSE;
+
+}
+
+// Create the NeuraNet to train the new topology for a given depth,
+// link index, input and ouput ID
+NeuraNet* CreateNewTopo(
+  const int depth,
+  const int iLink,
+  const int iIn,
+  const int iOut) {
+
+  // Create the NeuraNet to train the new topology
+  long nbMaxHidden = depth * threadEvalNbOutput;
+  long nbMaxBases = iLink;
+  long nbMaxLinks = nbMaxBases;
+  NeuraNet* nn =
+    NeuraNetCreate(
+      threadEvalNbInput,
+      threadEvalNbOutput,
+      nbMaxHidden, 
+      nbMaxBases,
+      nbMaxLinks);
+
+  // If there is a current best topology
+  if (threadTrainBestTopo.links != NULL) {
+
+    // Copy the best topo
+    for (
+      long i = VecGetDim(threadTrainBestTopo.links);
+      i--;) {
+
+      long val =
+        VecGet(
+          threadTrainBestTopo.links,
+          i);
+      VecSet(
+        nn->_links,
+        i,
+        val);
+
+    }
+
+    for (
+      long i = VecGetDim(threadTrainBestTopo.bases);
+      i--;) {
+
+      long val =
+        VecGet(
+          threadTrainBestTopo.bases,
+          i);
+      VecSet(
+        nn->_bases,
+        i,
+        val);
+
+    }
+
+    // Add the new link
+    VecSet(
+      nn->_links,
+      VecGetDim(threadTrainBestTopo.links),
+      iLink);
+    VecSet(
+      nn->_links,
+      VecGetDim(threadTrainBestTopo.links) + 1,
+      iIn);
+    VecSet(
+      nn->_links,
+      VecGetDim(threadTrainBestTopo.links) + 2,
+      iOut);
+    
+
+  // Else, there is no current best topo
+  } else {
+
+    // Add the new link
+    VecSet(
+      nn->_links,
+      0,
+      iLink);
+    VecSet(
+      nn->_links,
+      1,
+      iIn);
+    VecSet(
+      nn->_links,
+      2,
+      iOut);
+
+  }
+
+  // TODO set the mutable link
+
+  // Return the NeuraNet
+  return nn;
+
+}
+
+// Thread worker for the training
+gpointer ThreadWorkerTrain(gpointer data) {
+
+  (void)data;
+
+  // Loop on the depth
+  for (
+    int iDepth = 0;
+    iDepth < threadTrainDepth &&
+    threadTrainCurBestVal < threadTrainBestVal;
+    ++iDepth) {
+
+    // TODO Loop on the id of new link at the current depth
+    for (
+      int iLink = 0;
+      iLink < threadEvalNbInput * threadEvalNbOutput;
+      ++iLink) {
+
+      // TODO Loop on the source of the new link
+      for (
+        int iIn = 0;
+        iIn < threadEvalNbInput + iDepth * threadEvalNbOutput;
+        ++iIn) {
+
+        // Loop on the destination of the new link
+        for (
+          int iOut = 0;
+          iOut < threadEvalNbOutput;
+          ++iOut) {
+
+          // TODO Create the NeuraNet to train the new topology
+          NeuraNet* nn =
+            CreateNewTopo(
+              iDepth,
+              iLink,
+              iIn,
+              iOut);
+
+          // Add the NeuraNet to the set of topologies to train
+          GSetAppend(
+            threadTrainTopos,
+            nn);
+
+        }
+
+      }
+
+    }
+
+    // While there are topologies to train
+    while (GSetNbElem(threadTrainTopos) > 0) {
+
+      // If the current best is better than the requested best
+      if (threadTrainCurBestVal > threadTrainBestVal) {
+
+        // Flush the remaining topologies
+        while (GSetNbElem(threadTrainTopos) > 0) {
+
+          NeuraNet* nn = GSetPop(threadTrainTopos);
+          NeuraNetFree(&nn);
+
+        }
+
+      }
+
+      // TODO While there is a thread available to train a topology
+      // and there are topologies to train
+
+        // TODO Create the thread to train the topology
+
+      // Slow down this thread
+      sleep(1);
+
+    }
+
+    // TODO While there are threads training topologies
+    while (0) {
+
+      // Wait for the thread to end
+      sleep(1);
+
+    }
+
+    // Update the progress bar and message for the 'total' section
+
+  }
+
+  return NULL;
 
 }

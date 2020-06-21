@@ -984,6 +984,10 @@ GUI GUICreate(
     0,
     1);
 
+  // Initialiase the flags
+  appIsEvaluating = FALSE;
+  appIsTraining = FALSE;
+
   // Init the runtime configuration
   GUIInitConf(
     argc,
