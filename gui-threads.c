@@ -1,3 +1,97 @@
+// Add a pod to the results of the training thread
+void AddThreadTrainPod(
+  GSet* set,
+  void* pod) {
+
+  g_mutex_lock(&appMutex);
+  GSetAppend(
+    set,
+    pod);
+  g_mutex_unlock(&appMutex);
+
+}
+
+void AddThreadTrainPodTxt(
+  GtkTextView* txtView,
+   const char* msg) {
+
+  ThreadTrainResultTxt* podTxt =
+    PBErrMalloc(
+      AppErr,
+      sizeof(ThreadTrainResultTxt));
+  podTxt->txtView = txtView;
+  sprintf(
+    podTxt->msg,
+    "%s",
+    msg);
+  AddThreadTrainPod(
+    threadTrainTxt,
+    podTxt);
+
+}
+
+void AddThreadTrainPodProg(
+  GtkProgressBar* progBar,
+     const double comp) {
+
+  ThreadTrainResultProg* podProg =
+    PBErrMalloc(
+      AppErr,
+      sizeof(ThreadTrainResultProg));
+  podProg->prog = progBar;
+  podProg->comp = comp;
+  AddThreadTrainPod(
+    threadTrainProg,
+    podProg);
+
+}
+
+void AddThreadTrainPodLbl(
+    GtkLabel* lbl,
+  const char* msg) {
+
+    ThreadTrainResultLbl* podLbl =
+      PBErrMalloc(
+        AppErr,
+        sizeof(ThreadTrainResultLbl));
+    podLbl->lbl = lbl;
+    sprintf(
+      podLbl->msg,
+      "%s",
+      msg);
+    AddThreadTrainPod(
+      threadTrainLbl,
+      podLbl);
+
+}
+
+// Force the scroll bars down in the training tab
+void ScrollDownTrainTxtbox(void) {
+
+  GtkScrollable* scrollables[2] = {
+
+    GTK_SCROLLABLE(appTextBoxTrainMsgDepth),
+    GTK_SCROLLABLE(appTextBoxTrainMsgTotal)
+
+  };
+
+  for (
+    int i = 2;
+    i--;) {
+
+    GtkAdjustment* adjustment =
+      gtk_scrollable_get_vadjustment(scrollables[i]);
+    gtk_adjustment_set_value(
+      adjustment,
+      gtk_adjustment_get_upper(adjustment));
+    gtk_scrollable_set_vadjustment(
+      scrollables[i],
+      adjustment);
+
+  }
+
+}
+
 // Thread worker for the evaluation
 gpointer ThreadWorkerEval(gpointer data) {
 
@@ -63,7 +157,7 @@ gpointer ThreadWorkerEval(gpointer data) {
 
     // Process results by the main thread
     g_idle_add(
-      processThreadWorkerEval,
+      ProcessThreadWorkerEval,
       NULL);
 
     // Step to the next sample
@@ -82,12 +176,12 @@ gpointer ThreadWorkerEval(gpointer data) {
 
   // Process last results by the main thread
   g_idle_add(
-    processThreadWorkerEval,
+    ProcessThreadWorkerEval,
     NULL);
 
   // Send end signal to the main thread
   g_idle_add(
-    endThreadWorkerEval,
+    EndThreadWorkerEval,
     NULL);
 
   // Free memory
@@ -98,7 +192,7 @@ gpointer ThreadWorkerEval(gpointer data) {
 }
 
 // Function to process the data from the thread worker for evaluation
-gboolean processThreadWorkerEval(gpointer data) {
+gboolean ProcessThreadWorkerEval(gpointer data) {
 
   // Unused data
   (void)data;
@@ -211,7 +305,7 @@ gboolean processThreadWorkerEval(gpointer data) {
 }
 
 // Function to process the end of the thread worker for evaluation
-gboolean endThreadWorkerEval(gpointer data) {
+gboolean EndThreadWorkerEval(gpointer data) {
 
   // Unused data
   (void)data;
@@ -310,6 +404,100 @@ gboolean endThreadWorkerEval(gpointer data) {
 
 }
 
+// Function to process the data from the thread worker for training
+gboolean ProcessThreadWorkerTrain(gpointer data) {
+
+  // Unused data
+  (void)data;
+
+  // Lock the mutex
+  g_mutex_lock(&appMutex);
+
+  // Update the text boxes
+  while (GSetNbElem(threadTrainTxt) > 0) {
+
+    ThreadTrainResultTxt* pod = GSetPop(threadTrainTxt);
+    GtkTextBuffer* txtBuffer =
+      gtk_text_view_get_buffer(GTK_TEXT_VIEW(pod->txtView));
+    gtk_text_buffer_insert_at_cursor(
+      txtBuffer,
+      pod->msg,
+      strlen(pod->msg));
+    free(pod);
+
+  }
+
+  // Update the labels
+  while (GSetNbElem(threadTrainLbl) > 0) {
+
+    ThreadTrainResultLbl* pod = GSetPop(threadTrainLbl);
+    gtk_label_set_text(
+      pod->lbl,
+      pod->msg);
+    free(pod);
+
+  }
+
+  // Update the progress bars
+  while (GSetNbElem(threadTrainProg) > 0) {
+
+    ThreadTrainResultProg* pod = GSetPop(threadTrainProg);
+    gtk_progress_bar_set_fraction(
+      pod->prog,
+      pod->comp);
+    free(pod);
+
+  }
+
+  // Wait a little to be able to scroll down to the right place
+  sleep(1);
+
+  // Ensure the scrollbars are at the bottom
+  ScrollDownTrainTxtbox();
+
+  // Unlock the mutex
+  g_mutex_unlock(&appMutex);
+
+  return FALSE;
+
+}
+
+// Function to process the end of the thread worker for training
+gboolean EndThreadWorkerTrain(gpointer data) {
+
+  // Unused data
+  (void)data;
+
+  // Lock the mutex
+  g_mutex_lock(&appMutex);
+
+  // Unlock the button to enable running another training
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnTrainNeuraNet),
+    TRUE);
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnTrainStart),
+    TRUE);
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnTrainStop),
+    FALSE);
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnDataset),
+    TRUE);
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnShuffle),
+    TRUE);
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnSplit),
+    TRUE);
+
+  // Unlock the mutex
+  g_mutex_unlock(&appMutex);
+
+  return FALSE;
+
+}
+
 // Create the NeuraNet to train the new topology for a given depth,
 // link index, input and ouput ID
 NeuraNet* CreateNewTopo(
@@ -331,10 +519,10 @@ NeuraNet* CreateNewTopo(
       nbMaxLinks);
 
   // If there is a current best topology
-  /*if (threadTrainBestTopo.links != NULL) {
+  if (threadTrainBestTopo.links != NULL) {
 
     // Copy the best topo
-    for (
+    /*for (
       long i = VecGetDim(threadTrainBestTopo.links);
       i--;) {
 
@@ -362,10 +550,10 @@ NeuraNet* CreateNewTopo(
         i,
         val);
 
-    }
+    } */
 
-    // Add the new link
-    VecSet(
+    // TODO Add the new link
+    /*VecSet(
       nn->_links,
       VecGetDim(threadTrainBestTopo.links),
       iLink);
@@ -376,13 +564,13 @@ NeuraNet* CreateNewTopo(
     VecSet(
       nn->_links,
       VecGetDim(threadTrainBestTopo.links) + 2,
-      iOut);
+      iOut); */
 
   // Else, there is no current best topo
   } else {
 
     // Add the new link
-    VecSet(
+    /*VecSet(
       nn->_links,
       0,
       iLink);
@@ -393,9 +581,9 @@ NeuraNet* CreateNewTopo(
     VecSet(
       nn->_links,
       2,
-      iOut);
+      iOut); */
 
-  }*/
+  }
 
   // TODO set the mutable link
 
@@ -416,7 +604,7 @@ gpointer ThreadWorkerGenAlg(gpointer data) {
   // Train the NeuraNet
   sleep(1);
   (void)nn;
-  *nnVal = rand() * 100.0;
+  *nnVal = rnd() * -100.0;
 
   // Lock the mutex
   g_mutex_lock(&appMutex);
@@ -436,74 +624,130 @@ gpointer ThreadWorkerGenAlg(gpointer data) {
 
 }
 
+// Display a topology in a text view
+void DisplayTrainedTopology(
+            GtkTextView* textbox,
+    ThreadTrainTopology* topo) {
+
+  ThreadTrainResultTxt* podTxt;
+  for (
+    long iLink = 0;
+    iLink < VecGetDim(topo->bases);
+    iLink += 3) {
+
+    long in =
+      VecGet(
+        topo->bases,
+        iLink + 1);
+    long out =
+      VecGet(
+        topo->bases,
+        iLink + 2);
+    podTxt =
+      PBErrMalloc(
+        AppErr,
+        sizeof(ThreadTrainResultTxt));
+    podTxt->txtView = textbox;
+    sprintf(
+      podTxt->msg,
+      "%ld->%ld, ",
+      in,
+      out);
+    AddThreadTrainPod(
+      threadTrainTxt,
+      podTxt);
+
+  }
+
+  podTxt =
+    PBErrMalloc(
+      AppErr,
+      sizeof(ThreadTrainResultTxt));
+  podTxt->txtView = textbox;
+  sprintf(
+    podTxt->msg,
+    "\n");
+  AddThreadTrainPod(
+    threadTrainTxt,
+    podTxt);
+
+}
+
 // Update the best topology with the result of the training of one NeuraNet
 void UpdateBestTopo(const NeuraNetPod* const pod) {
 
-  // Lock the mutex
-  g_mutex_lock(&appMutex);
-
-  // Update the best value
+  // Memorize the best value
   threadTrainCurBestVal = pod->val;
 
-  // Update the best topology
+  // Memorize the best topology
   if (threadTrainBestTopo.links != NULL) {
 
     VecFree(&(threadTrainBestTopo.links));
 
   }
+
   threadTrainBestTopo.links = VecClone(pod->nn->_links);
+
   if (threadTrainBestTopo.bases != NULL) {
 
     VecFree(&(threadTrainBestTopo.bases));
 
   }
+
   threadTrainBestTopo.bases = VecClone(pod->nn->_bases);
 
   // Send a message to the user
-  GtkTextBuffer* txtBufferDepth =
-    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgDepth));
-  char msg[100];
+  ThreadTrainResultTxt* podTxt =
+    PBErrMalloc(
+      AppErr,
+      sizeof(ThreadTrainResultTxt));
+  podTxt->txtView = appTextBoxTrainMsgDepth;
   sprintf(
-    msg,
+    podTxt->msg,
     "Improved topology with value: %f.\n",
     pod->val);
-  gtk_text_buffer_insert_at_cursor(
-    txtBufferDepth,
-    msg,
-    strlen(msg));
-  // TODO print the topology
+  AddThreadTrainPod(
+    threadTrainTxt,
+    podTxt);
 
-  // Unlock the mutex
-  g_mutex_unlock(&appMutex);
+  // Print the topology
+  DisplayTrainedTopology(
+    appTextBoxTrainMsgDepth,
+    &threadTrainBestTopo);
 
 }
 
 // Thread worker for the training
 gpointer ThreadWorkerTrain(gpointer data) {
 
+  // Unused argument
   (void)data;
 
-  // Get the text buffers
-  GtkTextBuffer* txtBufferTotal =
-    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
+  // Variable to send signals to the main thread
   char msg[100];
+
+  // Reset the total ETC
+  ETCReset(appTrainETCTotal);
 
   // Loop on the depth
   for (
     int iDepth = 0;
     iDepth < threadTrainDepth &&
-    threadTrainCurBestVal < threadTrainBestVal;
+    threadTrainCurBestVal < threadTrainBestVal &&
+    threadTrainFlagInterrupt == false;
     ++iDepth) {
+
+    // Reset the depth ETC
+    ETCReset(appTrainETCDepth);
 
     // Send a message to the user
     sprintf(
       msg,
       "Create the topologies for depth #%d.\n",
       iDepth);
-    gtk_text_buffer_insert_at_cursor(
-      txtBufferTotal,
-      msg,
-      strlen(msg));
+    AddThreadTrainPodTxt(
+      appTextBoxTrainMsgTotal,
+      msg);
 
     // TODO Loop on the id of new link at the current depth
     for (
@@ -547,6 +791,11 @@ gpointer ThreadWorkerTrain(gpointer data) {
 
     }
 
+    // Send the signal to process the result of training
+    gdk_threads_add_idle(
+      ProcessThreadWorkerTrain,
+      NULL);
+
     // Memorize the total number of topologies to train
     long nbTopoToTrain = GSetNbElem(threadTrainNNToBeTrained);
 
@@ -555,53 +804,78 @@ gpointer ThreadWorkerTrain(gpointer data) {
       msg,
       "Max number of topologies to train: %ld.\n",
       nbTopoToTrain);
-    gtk_text_buffer_insert_at_cursor(
-      txtBufferTotal,
-      msg,
-      strlen(msg));
+    AddThreadTrainPodTxt(
+      appTextBoxTrainMsgTotal,
+      msg);
 
     // While there are topologies to train
     while (GSetNbElem(threadTrainNNToBeTrained) > 0) {
-printf("train\n");
+
       // Flush the trained topologies
       while (GSetNbElem(threadTrainNNTrained) > 0) {
-printf("flush trained\n");
-        NeuraNetPod* pod = GSetPop(threadTrainNNTrained);
 
-        // Update the best topology if necessary
+        g_mutex_lock(&appMutex);
+        NeuraNetPod* pod = GSetPop(threadTrainNNTrained);
+        g_mutex_unlock(&appMutex);
+
+        // Update the best topology if it's worst than this trained topo
         if (pod->val > threadTrainCurBestVal) {
 
           UpdateBestTopo(pod);
 
         }
 
+        // Free memory used by the trained topo
         NeuraNetFree(&(pod->nn));
         free(pod);
 
       }
 
       // If the current best is better than the requested best
+      bool flagSkip = false;
       if (threadTrainCurBestVal > threadTrainBestVal) {
+
+        flagSkip = true;
 
         // Send a message to the user
         sprintf(
           msg,
           "Best value reached. Skip the last %ld topologies.\n",
           GSetNbElem(threadTrainNNToBeTrained));
-        gtk_text_buffer_insert_at_cursor(
-          txtBufferTotal,
+        AddThreadTrainPodTxt(
+          appTextBoxTrainMsgTotal,
+          msg);
+
+      }
+
+      if (threadTrainFlagInterrupt == true) {
+
+        flagSkip = true;
+
+        // Send a message to the user
+        sprintf(
           msg,
-          strlen(msg));
+          "Interrupted by user.\n");
+        AddThreadTrainPodTxt(
+          appTextBoxTrainMsgTotal,
+          msg);
+
+      }
+
+      if (flagSkip == true) {
 
         // Flush the remaining topologies
+        g_mutex_lock(&appMutex);
         while (GSetNbElem(threadTrainNNToBeTrained) > 0) {
-printf("flush remaining\n");
+
           NeuraNetPod* pod = GSetPop(threadTrainNNToBeTrained);
           NeuraNetFree(&(pod->nn));
           free(pod);
           --nbTopoToTrain;
 
         }
+
+        g_mutex_unlock(&appMutex);
 
       }
 
@@ -610,24 +884,20 @@ printf("flush remaining\n");
       while (
         GSetNbElem(threadTrainNNUnderTraining) < threadTrainNbThread &&
         GSetNbElem(threadTrainNNToBeTrained) > 0) {
-printf("add thread\n");
-        // Lock the mutex
-        g_mutex_lock(&appMutex);
 
-        // TODO Create the thread to train the topology
+        // Create the thread to train the topology
+        g_mutex_lock(&appMutex);
         NeuraNetPod* pod = GSetPop(threadTrainNNToBeTrained);
         GSetAppend(
           threadTrainNNUnderTraining,
           pod);
+        g_mutex_unlock(&appMutex);
         GThread* thread =
           g_thread_new(
             "threadGenAlg",
             ThreadWorkerGenAlg,
             (gpointer)pod);
         g_thread_unref(thread);
-
-        // Unlock the mutex
-        g_mutex_unlock(&appMutex);
 
       }
 
@@ -636,36 +906,57 @@ printf("add thread\n");
         ((float)GSetNbElem(threadTrainNNToBeTrained) +
         (float)GSetNbElem(threadTrainNNUnderTraining)) /
         ((float)nbTopoToTrain);
-      gtk_progress_bar_set_fraction(
+      AddThreadTrainPodProg(
         appProgTrainDepth,
         threadTrainCompletionDepth);
 
+      // Update the ETC
+      const gchar* etc =
+        ETCGet(
+          appTrainETCDepth,
+          threadTrainCompletionDepth);
+      AddThreadTrainPodLbl(
+        appLblETCDepth,
+        etc);
+
       // Slow down the main training thread
       sleep(1);
+
+      // Send the signal to process the result of training
+      gdk_threads_add_idle(
+        ProcessThreadWorkerTrain,
+        NULL);
 
     }
 
     // While there are threads training topologies
     while (GSetNbElem(threadTrainNNUnderTraining) > 0) {
-printf("wait last thread\n");
+
       // Update the progress bar for the 'depth' section
       threadTrainCompletionDepth = 1.0 -
         ((float)GSetNbElem(threadTrainNNToBeTrained) +
         (float)GSetNbElem(threadTrainNNUnderTraining)) /
         ((float)nbTopoToTrain);
-      gtk_progress_bar_set_fraction(
+      AddThreadTrainPodProg(
         appProgTrainDepth,
         threadTrainCompletionDepth);
 
       // Wait for the child training threads to end
       sleep(1);
 
+      // Send the signal to process the result of training
+      gdk_threads_add_idle(
+        ProcessThreadWorkerTrain,
+        NULL);
+
     }
 
     // Flush the trained topologies
     while (GSetNbElem(threadTrainNNTrained) > 0) {
-printf("flush last trained\n");
+
+      g_mutex_lock(&appMutex);
       NeuraNetPod* pod = GSetPop(threadTrainNNTrained);
+      g_mutex_unlock(&appMutex);
 
       // Update the best topology if necessary
       if (pod->val > threadTrainCurBestVal) {
@@ -679,18 +970,69 @@ printf("flush last trained\n");
 
     }
 
-    // TODO Update the progress bar and message for the 'total' section
+    // Update the progress bar
     threadTrainCompletionTotal =
-      ((float)iDepth) / ((float)threadTrainDepth);
-    gtk_progress_bar_set_fraction(
+      ((float)iDepth + 1.0) / ((float)threadTrainDepth);
+    AddThreadTrainPodProg(
       appProgTrainTotal,
       threadTrainCompletionTotal);
+
     threadTrainCompletionDepth = 1.0;
-    gtk_progress_bar_set_fraction(
+    AddThreadTrainPodProg(
       appProgTrainDepth,
       threadTrainCompletionDepth);
 
+    // Update the ETC
+    const char* etc =
+      ETCGet(
+        appTrainETCTotal,
+        threadTrainCompletionTotal);
+    AddThreadTrainPodLbl(
+      appLblETCTotal,
+      etc);
+
+    // Update the message for the 'total' section
+    sprintf(
+      msg,
+      "Current best value: %f.\n",
+      threadTrainCurBestVal);
+    AddThreadTrainPodTxt(
+      appTextBoxTrainMsgTotal,
+      msg);
+
+    DisplayTrainedTopology(
+      appTextBoxTrainMsgTotal,
+      &threadTrainBestTopo);
+
   }
+
+  // Make sure the progress bar are filled as we may have skipped some
+  // depth
+  threadTrainCompletionTotal = 1.0;
+  AddThreadTrainPodProg(
+    appProgTrainTotal,
+    threadTrainCompletionTotal);
+
+  // Display a last message
+  const gchar* elapsed = ETCGetElapsed(appTrainETCTotal);
+  sprintf(
+    msg,
+    "Training has ended in %s.\n",
+    elapsed);
+  AddThreadTrainPodTxt(
+    appTextBoxTrainMsgTotal,
+    msg);
+
+  // Send a last time the signal to process the remaining results of
+  // training
+  gdk_threads_add_idle(
+    ProcessThreadWorkerTrain,
+    NULL);
+
+  // Send the signal to indicate the termination of training
+  gdk_threads_add_idle(
+    EndThreadWorkerTrain,
+    NULL);
 
   return NULL;
 

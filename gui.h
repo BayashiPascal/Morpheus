@@ -3,6 +3,7 @@
 #include "pbmath.h"
 #include "gdataset.h"
 #include "neuranet.h"
+#include "respublish.h"
 #include <gtk/gtk.h>
 
 #define appWins (app.windows)
@@ -23,6 +24,8 @@
 #define appInpTrainSizePool (app.inputs.inpTrainSizePool)
 #define appInpTrainBestVal (app.inputs.inpTrainBestVal)
 #define appInpTrainNbThread (app.inputs.inpTrainNbThread)
+#define appLblETCDepth (app.textboxes.lblETCDepth)
+#define appLblETCTotal (app.textboxes.lblETCTotal)
 #define appRadEvalTrain (app.inputs.radEvalTrain)
 #define appRadEvalValid (app.inputs.radEvalValid)
 #define appRadEvalEval (app.inputs.radEvalEval)
@@ -32,6 +35,7 @@
 #define appBtnShuffle (app.inputs.btnShuffle)
 #define appBtnTrainNeuraNet (app.inputs.btnTrainNeuraNet)
 #define appBtnTrainStart (app.inputs.btnTrainStart)
+#define appBtnTrainStop (app.inputs.btnTrainStop)
 #define appProgEval (app.inputs.progEval)
 #define appProgTrainDepth (app.inputs.progTrainDepth)
 #define appProgTrainTotal (app.inputs.progTrainTotal)
@@ -40,15 +44,15 @@
 #define appTextBoxDataset (app.textboxes.txtDataset)
 #define appTextBoxEval (app.textboxes.txtEval)
 #define appTextBoxTrainMsgTotal (app.textboxes.txtTrainMsgTotal)
-#define appTextBoxTrainNeuraNetTotal (app.textboxes.txtTrainNeuraNetTotal)
 #define appTextBoxTrainMsgDepth (app.textboxes.txtTrainMsgDepth)
-#define appTextBoxTrainNeuraNetDepth (app.textboxes.txtTrainNeuraNetDepth)
 #define appDataset (&(app.dataset))
 #define appNeuranet (app.neuranet)
 #define appMutex (app.mutexThread)
 #define appEvalResults (&(app.evalResults))
 #define appIsEvaluating (app.isEvaluating)
 #define appIsTraining (app.isTraining)
+#define appTrainETCTotal (&(app.trainETCTotal))
+#define appTrainETCDepth (&(app.trainETCDepth))
 #define threadEvalNbInput (app.threadEvalData.nbInput)
 #define threadEvalNbOutput (app.threadEvalData.nbOutput)
 #define threadEvalCat (app.threadEvalData.cat)
@@ -69,6 +73,10 @@
 #define threadTrainNNToBeTrained (&(app.threadTrainData.NNToBeTrained))
 #define threadTrainNNUnderTraining (&(app.threadTrainData.NNUnderTraining))
 #define threadTrainNNTrained (&(app.threadTrainData.NNTrained))
+#define threadTrainFlagInterrupt (app.threadTrainData.flagInterrupt)
+#define threadTrainTxt (&(app.threadTrainResult.setTxt))
+#define threadTrainLbl (&(app.threadTrainResult.setLbl))
+#define threadTrainProg (&(app.threadTrainResult.setProg))
 
 typedef struct GUIWindows {
 
@@ -120,6 +128,7 @@ typedef struct GUIInputs {
   GtkButton* btnSplit;
   GtkButton* btnTrainNeuraNet;
   GtkButton* btnTrainStart;
+  GtkButton* btnTrainStop;
   GtkProgressBar* progEval;
   GtkProgressBar* progTrainTotal;
   GtkProgressBar* progTrainDepth;
@@ -134,11 +143,11 @@ typedef struct GUITextboxes {
   // Text boxes of the eval tab
   GtkTextView* txtEval;
 
-  // Text boxes of the train tab
+  // Text boxes and labels of the train tab
   GtkTextView* txtTrainMsgTotal;
-  GtkTextView* txtTrainNeuraNetTotal;
   GtkTextView* txtTrainMsgDepth;
-  GtkTextView* txtTrainNeuraNetDepth;
+  GtkLabel* lblETCTotal;
+  GtkLabel* lblETCDepth;
 
 } GUITextBoxes;
 
@@ -205,6 +214,9 @@ typedef struct ThreadTrainData {
   // GSet of trained NeuraNet
   GSet NNTrained;
 
+  // Flag to interrupt the training
+  bool flagInterrupt;
+
 } ThreadTrainData;
 
 typedef struct ThreadEvalResult {
@@ -219,6 +231,40 @@ typedef struct ThreadEvalResult {
   long iSample;
 
 } ThreadEvalResult;
+
+typedef struct ThreadTrainResultTxt {
+
+  GtkTextView* txtView;
+  char msg[100];
+
+} ThreadTrainResultTxt;
+
+typedef struct ThreadTrainResultLbl {
+
+  GtkLabel* lbl;
+  char msg[100];
+
+} ThreadTrainResultLbl;
+
+typedef struct ThreadTrainResultProg {
+
+  GtkProgressBar* prog;
+  float comp;
+
+} ThreadTrainResultProg;
+
+typedef struct ThreadTrainResult {
+
+  // GSet of ThreadTrainResultTxt
+  GSet setTxt;
+
+  // GSet of ThreadTrainResultLbl
+  GSet setLbl;
+
+  // GSet of ThreadTrainResultProg
+  GSet setProg;
+
+} ThreadTrainResult;
 
 typedef struct GUI {
 
@@ -256,9 +302,16 @@ typedef struct GUI {
   // GSet of ThreadEvalResult
   GSet evalResults;
 
+  // Results from the thread train
+  ThreadTrainResult threadTrainResult;
+
   // Flags to manage the lock of buttons furing eval and training
   bool isEvaluating;
   bool isTraining;
+
+  // Estimated time to completion for the training
+  EstimTimeToComp trainETCTotal;
+  EstimTimeToComp trainETCDepth;
 
 } GUI;
 
@@ -368,10 +421,10 @@ void LoadNeuraNet(const char* path);
 gpointer ThreadWorkerEval(gpointer data);
 
 // Function to process the data from the thread worker for evaluation
-gboolean processThreadWorkerEval(gpointer data);
+gboolean ProcessThreadWorkerEval(gpointer data);
 
 // Function to process the end of the thread worker for evaluation
-gboolean endThreadWorkerEval(gpointer data);
+gboolean EndThreadWorkerEval(gpointer data);
 
 // Thread worker for the training
 gpointer ThreadWorkerTrain(gpointer data);

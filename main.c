@@ -5,6 +5,9 @@ int main(
      int argc,
   char** argv) {
 
+  // Initialise the random generator
+  srand(time(NULL));
+
   // Initialise the GTK library
   gtk_init(
     &argc,

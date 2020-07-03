@@ -161,7 +161,7 @@ gboolean CbBtnTrainStartClicked(
   (void)btn;
   (void)user_data;
 
-  // Empty the text buffers
+  // Empty the text buffers and reset their buffer iterator
   GtkTextBuffer* txtBuffer =
     gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgDepth));
   gtk_text_buffer_set_text(
@@ -169,19 +169,7 @@ gboolean CbBtnTrainStartClicked(
     "\0",
     -1);
   txtBuffer =
-    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainNeuraNetDepth));
-  gtk_text_buffer_set_text(
-    txtBuffer,
-    "\0",
-    -1);
-  txtBuffer =
     gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainMsgTotal));
-  gtk_text_buffer_set_text(
-    txtBuffer,
-    "\0",
-    -1);
-  txtBuffer =
-    gtk_text_view_get_buffer(GTK_TEXT_VIEW(appTextBoxTrainNeuraNetTotal));
   gtk_text_buffer_set_text(
     txtBuffer,
     "\0",
@@ -290,6 +278,9 @@ gboolean CbBtnTrainStartClicked(
           GTK_WIDGET(appBtnTrainStart),
           FALSE);
         gtk_widget_set_sensitive(
+          GTK_WIDGET(appBtnTrainStop),
+          TRUE);
+        gtk_widget_set_sensitive(
           GTK_WIDGET(appBtnDataset),
           FALSE);
         gtk_widget_set_sensitive(
@@ -298,6 +289,17 @@ gboolean CbBtnTrainStartClicked(
         gtk_widget_set_sensitive(
           GTK_WIDGET(appBtnSplit),
           FALSE);
+
+        // Reset the displayed ETC
+        gtk_label_set_text(
+          appLblETCTotal,
+          (const gchar*)"d:h:m:s");
+        gtk_label_set_text(
+          appLblETCDepth,
+          (const gchar*)"d:h:m:s");
+
+        // Reset the flag for interruption
+        threadTrainFlagInterrupt = false;
 
         // Start a thread
         GThread* thread =
@@ -343,6 +345,23 @@ gboolean CbBtnTrainStartClicked(
       strlen(msg));
 
   }
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
+// Callback function for the 'clicked' event on btnTrainStop
+gboolean CbBtnTrainStopClicked(
+  GtkButton* btn,
+    gpointer user_data) {
+
+  // Unused argument
+  (void)btn;
+  (void)user_data;
+
+  // Raise the flag for interruption
+  threadTrainFlagInterrupt = true;
 
   // Return true to stop the callback chain
   return TRUE;

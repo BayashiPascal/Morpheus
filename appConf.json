@@ -8,9 +8,9 @@
   "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone.nn",
   "inpTrainNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone2.nn",
   "inpTrainNbEpoch":"2",
-  "inpTrainDepth":"3",
+  "inpTrainDepth":"2",
   "inpTrainNbElite":"5",
   "inpTrainSizePool":"20",
-  "inpTrainBestVal":"-1.0",
+  "inpTrainBestVal":"0.0",
   "inpTrainNbThread":"6"
 }

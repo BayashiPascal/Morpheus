@@ -63,6 +63,8 @@ void GUIFree(void) {
   GUIFreeConf();
   GDataSetVecFloatFreeStatic(appDataset);
   GDataSetVecFloatFreeStatic(threadEvalDataset);
+  EstimTimeToCompFreeStatic(appTrainETCTotal);
+  EstimTimeToCompFreeStatic(appTrainETCDepth);
   if (appNeuranet != NULL) {
 
     NeuraNetFree(&appNeuranet);
@@ -191,6 +193,18 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     btnTrainStart,
     "clicked",
     G_CALLBACK(CbBtnTrainStartClicked),
+    NULL);
+
+  // Set the callback on the 'clicked' event of btnTrainStop
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainStop");
+  GtkWidget* btnTrainStop = GTK_WIDGET(obj);
+  g_signal_connect(
+    btnTrainStop,
+    "clicked",
+    G_CALLBACK(CbBtnTrainStopClicked),
     NULL);
 
   // Set the callback on the 'changed' event of inpDataset
@@ -775,6 +789,21 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "btnShuffle"));
+  appBtnTrainNeuraNet = GTK_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainNeuraNet"));
+  appBtnTrainStart = GTK_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainStart"));
+  appBtnTrainStop = GTK_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "btnTrainStop"));
+  gtk_widget_set_sensitive(
+    GTK_WIDGET(appBtnTrainStop),
+    FALSE);
   appBtnSplit = GTK_BUTTON(
     gtk_builder_get_object(
       gtkBuilder,
@@ -791,6 +820,14 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "progTrainDepth"));
+  appLblETCTotal = GTK_LABEL(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "lblTrainEtcTotal"));
+  appLblETCDepth = GTK_LABEL(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "lblTrainEtcDepth"));
 
   // Init the widgets with the value in the config file
   JSONNode* inp =
@@ -924,18 +961,10 @@ void GUIInitTextBoxes(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "txtTrainMsgDepth"));
-  appTextBoxTrainNeuraNetDepth = GTK_TEXT_VIEW(
-    gtk_builder_get_object(
-      gtkBuilder,
-      "txtTrainNeuraNetDepth"));
   appTextBoxTrainMsgTotal = GTK_TEXT_VIEW(
     gtk_builder_get_object(
       gtkBuilder,
       "txtTrainMsgTotal"));
-  appTextBoxTrainNeuraNetTotal = GTK_TEXT_VIEW(
-    gtk_builder_get_object(
-      gtkBuilder,
-      "txtTrainNeuraNetTotal"));
 
 }
 
@@ -984,9 +1013,18 @@ GUI GUICreate(
     0,
     1);
 
+  // Initialise the result structure for the training
+  *threadTrainTxt = GSetCreateStatic();
+  *threadTrainLbl = GSetCreateStatic();
+  *threadTrainProg = GSetCreateStatic();
+
   // Initialiase the flags
   appIsEvaluating = FALSE;
   appIsTraining = FALSE;
+
+  // Init the ETC for training
+  *appTrainETCTotal = EstimTimeToCompCreateStatic();
+  *appTrainETCDepth = EstimTimeToCompCreateStatic();
 
   // Init the runtime configuration
   GUIInitConf(
