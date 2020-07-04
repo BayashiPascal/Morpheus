@@ -5,12 +5,12 @@
   "inpSplitTrain":"3000",
   "inpSplitValid":"1000",
   "inpSplitEval":"177",
-  "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone.nn",
+  "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone2.nn",
   "inpTrainNeuraNet":"/home/bayashi/GitHub/Morpheus/abalone2.nn",
   "inpTrainNbEpoch":"2",
   "inpTrainDepth":"2",
   "inpTrainNbElite":"5",
-  "inpTrainSizePool":"20",
+  "inpTrainSizePool":"10",
   "inpTrainBestVal":"0.0",
   "inpTrainNbThread":"6"
 }

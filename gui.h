@@ -189,7 +189,7 @@ typedef struct ThreadTrainData {
   float completionDepth;
 
   // Parameters for the training
-  int nbEpoch;
+  unsigned long nbEpoch;
   int depth;
   int trainDepth;
   int nbElite;

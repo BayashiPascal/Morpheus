@@ -100,16 +100,18 @@ gpointer ThreadWorkerEval(gpointer data) {
   // Init variables for the evaluation
   VecFloat* vecIn = VecFloatCreate(threadEvalNbInput);
 
-  // Loop on the samples
-  GDSReset(
-    appDataset,
-    threadEvalCat);
+  // Variable to perform the evaluation
   bool flagStep = TRUE;
   long iSample = 0;
   long nbSamples =
     GDSGetSizeCat(
       appDataset,
       threadEvalCat);
+
+  // Loop on the samples with a copy of the internal iterator of the
+  // GDataset as we can't use it in a multihtreaded context
+  GSetIterForward iter = appDataset->_dataSet._iterators[threadEvalCat];
+  GSetIterReset(&iter);
   do {
 
     // Allocate memory for the result
@@ -121,10 +123,7 @@ gpointer ThreadWorkerEval(gpointer data) {
     evalResult->iSample = iSample;
 
     // Get the sample
-    evalResult->sample =
-      GDSGetSample(
-        appDataset,
-        threadEvalCat);
+    evalResult->sample = GSetIterGet(&iter);
 
     // Init the input of the NeuraNet
     for (
@@ -162,10 +161,7 @@ gpointer ThreadWorkerEval(gpointer data) {
 
     // Step to the next sample
     ++iSample;
-    flagStep =
-      GDSStepSample(
-        appDataset,
-        threadEvalCat);
+    flagStep = GSetIterStep(&iter);
 
     // Update the percentage of completion
     threadEvalCompletion =
@@ -282,7 +278,7 @@ gboolean ProcessThreadWorkerEval(gpointer data) {
       "\n",
       1);
 
-    // Save the result vector for later analyis
+    // Memorize the result vector for later analyis
     GDSAddSample(
       threadEvalDataset,
       evalResult->result);
@@ -508,7 +504,9 @@ NeuraNet* CreateNewTopo(
 
   // Create the NeuraNet to train the new topology
   long nbMaxHidden = depth * threadTrainNbOut;
-  long nbMaxBases = 1 + iLink;
+  if (nbMaxHidden == 0)
+    nbMaxHidden = 1;
+  long nbMaxBases = 1; // + iLink;
   long nbMaxLinks = nbMaxBases;
   NeuraNet* nn =
     NeuraNetCreate(
@@ -517,6 +515,11 @@ NeuraNet* CreateNewTopo(
       nbMaxHidden,
       nbMaxBases,
       nbMaxLinks);
+
+  VecSet(
+    nn->_links,
+    2,
+    11);
 
   // If there is a current best topology
   if (threadTrainBestTopo.links != NULL) {
@@ -592,6 +595,115 @@ NeuraNet* CreateNewTopo(
 
 }
 
+// Evalutation function for the NeuraNet 'that' on the GDataSet 'dataset'
+// Return the value of the NeuraNet, value <= 0.0, the bigger the better
+float EvaluateNeuraNet(
+  const NeuraNet* const that,
+              const int cat,
+                  float thresholdVal) {
+
+  // Declare 3 vectors to memorize the input, output and correct answer
+  // values
+  VecFloat* input = VecFloatCreate(NNGetNbInput(that));
+  VecFloat* output = VecFloatCreate(NNGetNbOutput(that));
+  VecFloat* answer = VecFloatCreate(NNGetNbOutput(that));
+
+  // Declare some temporary variables to calculate the value of
+  // the NeuraNet
+  float val = 0.0;
+  bool flagStep = TRUE;
+  long iSample = 0;
+  long nbSamples =
+    GDSGetSizeCat(
+      appDataset,
+      cat);
+
+  // Loop on the samples with a copy of the internal iterator of the
+  // GDataset as we can't use it in a multihtreaded context
+  GSetIterForward iter = appDataset->_dataSet._iterators[0];
+  GSetIterReset(&iter);
+  do {
+
+    // Get the sample
+    VecFloat* sample = GSetIterGet(&iter);
+
+    // Initialize the input vector
+    for (
+      int iInp = NNGetNbInput(that);
+      iInp--;) {
+
+      float v =
+        VecGet(
+          sample,
+          iInp);
+      VecSet(
+        input,
+        iInp,
+        v);
+
+    }
+
+    // Initialize the answer vector
+    for (
+      int iOut = NNGetNbOutput(that);
+      iOut--;) {
+
+      float v =
+        VecGet(
+          sample,
+          NNGetNbInput(that) + iOut);
+      VecSet(
+        answer,
+        iOut,
+        v);
+
+    }
+
+    // Calculate the output predicted by the NeuraNet
+    NNEval(
+      that,
+      input,
+      output);
+
+    // Get the difference between the prediction and the correct answer
+    float v =
+      VecDist(
+        output,
+        answer);
+
+    // Update the total of difference
+    val -= v;
+
+    // Calculate the best possible final value
+    float bestPossibleVal = val / (float)(nbSamples);
+
+    // If the best possible final value is less than the current worst
+    if (bestPossibleVal < thresholdVal) {
+
+      // Skip the remaining samples of the dataset
+      val = val / (float)iSample * (float)(nbSamples);
+      iSample = 0;
+
+    }
+
+    // Step to the next sample
+    flagStep = GSetIterStep(&iter);
+
+  } while (flagStep);
+
+  // Calculate the average of differences
+  val /= (float)(nbSamples);
+
+  // Free memory
+  VecFree(&input);
+  VecFree(&output);
+  VecFree(&answer);
+
+  // Return the result of the evaluation
+  return val;
+
+}
+
 // Thread worker for the training of one NeuraNet
 // data's type is NeuraNet*
 gpointer ThreadWorkerGenAlg(gpointer data) {
@@ -601,10 +713,156 @@ gpointer ThreadWorkerGenAlg(gpointer data) {
   NeuraNet* nn = pod->nn;
   float* nnVal = &(pod->val);
 
-  // Train the NeuraNet
-  sleep(1);
-  (void)nn;
-  *nnVal = rnd() * -100.0;
+  // Create the GenAlg
+  GenAlg* ga =
+    GenAlgCreate(
+      threadTrainSizePool,
+      threadTrainNbElite,
+      NNGetGAAdnFloatLength(nn),
+      NNGetGAAdnIntLength(nn));
+  NNSetGABoundsBases(
+    nn,
+    ga);
+  NNSetGABoundsLinks(
+    nn,
+    ga);
+
+  // TODO Switch the GenAlg to Morpheus mode with the indices of the
+  // currently trained links
+  long iBases[2] = {0, 0};
+  GASetTypeMorpheus(
+    ga,
+    2,
+    iBases,
+    NNBases(nn),
+    NNLinks(nn));
+
+  // Init the GenAlg
+  GAInit(ga);
+  GASetDiversityThreshold(
+    ga,
+    0.001);
+
+  // Declare a variable to memorize the best/worst value in the
+  // current epoch
+  float bestVal = threadTrainBestVal - 1000.0;
+  float curBest = 0.0;
+  float curWorst = 0.0;
+  float curWorstElite = 0.0;
+
+  // Learning loop
+  while (
+    bestVal < threadTrainBestVal &&
+    GAGetCurEpoch(ga) < threadTrainNbEpoch) {
+
+    curWorst = curBest;
+    curBest = threadTrainBestVal - 1000.0;
+    curWorstElite = threadTrainBestVal - 1000.0;
+    int curBestI = 0;
+
+    // For each adn in the GenAlg
+    for (
+      int iEnt = 0;
+      iEnt < GAGetNbAdns(ga);
+      ++iEnt) {
+
+      // Get the adn
+      GenAlgAdn* adn =
+        GAAdn(ga,
+        iEnt);
+
+      // If this adn is new
+      if (GAAdnIsNew(adn) == true) {
+
+        // Set the links and base functions of the NeuraNet according
+        // to this adn
+        if (GABestAdnF(ga) != NULL) {
+
+          NNSetBases(
+            nn,
+            GAAdnAdnF(adn));
+
+        }
+
+        // Evaluate the NeuraNet
+        float value =
+          EvaluateNeuraNet(
+            nn,
+            0,
+            curWorstElite);
+
+        // Depreciate entites identical to the current best
+        if (fabs(value - curBest) < PBMATH_EPSILON) {
+
+          value -= 1000.0;
+
+        }
+
+        // Update the value of this adn
+        GASetAdnValue(
+          ga,
+          adn,
+          value);
+
+        // Update the best value in the current epoch
+        if (value > curBest) {
+
+          curBest = value;
+          curBestI = iEnt;
+
+        }
+
+        if (value < curWorst) {
+
+          curWorst = value;
+
+        }
+
+      }
+
+    }
+
+    // Memorize the current value of the worst elite
+    GenAlgAdn* worstEliteAdn =
+      GAAdn(
+        ga,
+        GAGetNbElites(ga) - 1);
+    curWorstElite = GAAdnGetVal(worstEliteAdn);
+
+    // If there has been improvement during this epoch
+    if (curBest > bestVal) {
+
+      bestVal = curBest;
+      GenAlgAdn* bestAdn =
+        GAAdn(
+          ga,
+          curBestI);
+
+      // Set the links and base functions of the NeuraNet according
+      // to the best adn
+      if (GAAdnAdnF(bestAdn) != NULL) {
+
+        NNSetBases(
+          nn,
+          GAAdnAdnF(bestAdn));
+
+      }
+
+    }
+
+    // Step the GenAlg
+    GAStep(ga);
+
+  }
+
+  // Memorize the result of training
+  *nnVal = bestVal;
+  NNSetBases(
+    nn,
+    GABestAdnF(ga));
+
+  // Free memory
+  GenAlgFree(&ga);
 
   // Lock the mutex
   g_mutex_lock(&appMutex);
@@ -695,6 +953,19 @@ void UpdateBestTopo(const NeuraNetPod* const pod) {
   }
 
   threadTrainBestTopo.bases = VecClone(pod->nn->_bases);
+
+  // Save the NeuraNet
+  g_mutex_lock(&appMutex);
+  FILE* fp =
+    fopen(
+      gtk_entry_get_text(appInpTrainNeuraNet),
+      "w");
+  NNSave(
+    pod->nn,
+    fp,
+    true);
+  fclose(fp);
+  g_mutex_unlock(&appMutex);
 
   // Send a message to the user
   ThreadTrainResultTxt* podTxt =
@@ -819,9 +1090,21 @@ gpointer ThreadWorkerTrain(gpointer data) {
         g_mutex_unlock(&appMutex);
 
         // Update the best topology if it's worst than this trained topo
+        // and this trained topo's value on the validation is also
+        // better than the current best topology
         if (pod->val > threadTrainCurBestVal) {
 
-          UpdateBestTopo(pod);
+          float valid =
+            EvaluateNeuraNet(
+              pod->nn,
+              1,
+              threadTrainCurBestVal);
+
+          if (valid > threadTrainCurBestVal) {
+
+            UpdateBestTopo(pod);
+
+          }
 
         }
 
@@ -863,6 +1146,14 @@ gpointer ThreadWorkerTrain(gpointer data) {
       }
 
       if (flagSkip == true) {
+
+        // Send a message to the user
+        sprintf(
+          msg,
+          "Wait for running threads...\n");
+        AddThreadTrainPodTxt(
+          appTextBoxTrainMsgTotal,
+          msg);
 
         // Flush the remaining topologies
         g_mutex_lock(&appMutex);
