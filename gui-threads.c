@@ -509,7 +509,7 @@ NeuraNet* CreateNewTopo(
   NeuraNet* nn = NULL;
 
   // If there is no current best topology
-  if (threadTrainBestTopo.links != NULL) {
+  if (threadTrainBestTopo.links == NULL) {
 
     // Create a topology with only one link (iIn->iOut)
     // NeuraNet needs at least one hidden value, even if we don't
@@ -548,8 +548,10 @@ NeuraNet* CreateNewTopo(
 
     // TODO Create a new topology made of the topology of the current best
     // plus the new link (iIn->iOut)
-    long nbHidden = 1;
-    long nbBases = 1;
+    long nbHidden = threadTrainBestTopo.nbHidden;
+    long nbBasesBest =
+      VecGetDim(threadTrainBestTopo.bases) / NN_NBPARAMBASE;
+    long nbBases = nbBasesBest + 1;
     long nbLinks = nbBases;
     nn =
       NeuraNetCreate(
@@ -559,22 +561,60 @@ NeuraNet* CreateNewTopo(
         nbBases,
         nbLinks);
 
-    // Set the new link base
-    VecSet(
-      nn->_links,
-      0,
-      0);
+    // Copy the best topology
+    for (
+      long iGene = 0;
+      iGene < nbBasesBest;
+      ++iGene) {
 
-    // Set the new link input
+      for (
+        int shift = NN_NBPARAMLINK;
+        shift--;) {
+
+        long val =
+          VecGet(
+            threadTrainBestTopo.links,
+            iGene * NN_NBPARAMLINK + shift);
+        VecSet(
+          nn->_links,
+          iGene * NN_NBPARAMLINK + shift,
+          val);
+
+      }
+
+      for (
+        int shift = NN_NBPARAMBASE;
+        shift--;) {
+
+        float val =
+          VecGet(
+            threadTrainBestTopo.bases,
+            iGene * NN_NBPARAMBASE + shift);
+        VecSet(
+          nn->_bases,
+          iGene * NN_NBPARAMBASE + shift,
+          val);
+
+      }
+
+    }
+
+    // Append the new link base
     VecSet(
       nn->_links,
-      1,
+      nbBasesBest * NN_NBPARAMBASE,
+      nbBasesBest);
+
+    // Append the new link input
+    VecSet(
+      nn->_links,
+      nbBasesBest * NN_NBPARAMBASE + 1,
       iIn);
 
-    // Set the new link output
+    // Append the new link output
     VecSet(
       nn->_links,
-      2,
+      nbBasesBest * NN_NBPARAMBASE + 2,
       threadTrainNbIn + nbHidden + iOut);
 
   }
@@ -719,6 +759,7 @@ gpointer ThreadWorkerGenAlg(gpointer data) {
   // TODO Switch the GenAlg to Morpheus mode with the indices of the
   // currently trained links
   long iBases[2] = {0, 0};
+  iBases[0] = NNGetNbMaxBases(nn) - 1;
   int nbBase = 1;
   GASetTypeMorpheus(
     ga,
@@ -881,7 +922,7 @@ void DisplayTrainedTopology(
   for (
     long iLink = 0;
     iLink < VecGetDim(topo->links);
-    iLink += 3) {
+    iLink += NN_NBPARAMBASE) {
 
     long in =
       VecGet(
