@@ -172,6 +172,7 @@ typedef struct ThreadTrainTopology {
 
   VecFloat* bases;
   VecLong* links;
+  long nbHidden;
 
 } ThreadTrainTopology;
 
