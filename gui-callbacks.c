@@ -607,9 +607,6 @@ gboolean CbBtnEvalClicked(
     appProgEval,
     threadEvalCompletion);
 
-  // Reset the result dataset
-  GDSRemoveAllSample(threadEvalDataset);
-
   // If there is a NeuraNet loaded
   if (appNeuranet != NULL) {
 
@@ -664,6 +661,15 @@ gboolean CbBtnEvalClicked(
           threadEvalNbInput + threadEvalNbOutput == sampleDim &&
           threadEvalNbInput == NNGetNbInput(appNeuranet) &&
           threadEvalNbOutput == NNGetNbOutput(appNeuranet)) {
+
+          // Reset the result dataset
+          GDataSetVecFloatFreeStatic(threadEvalDataset);
+          *threadEvalDataset = GDataSetVecFloatCreateStatic();
+          threadEvalDataset->_dataSet._sampleDim = VecShortCreate(1);
+          VecSet(
+            threadEvalDataset->_dataSet._sampleDim,
+            0,
+            threadEvalNbOutput);
 
           // Raise the flag
           appIsEvaluating = TRUE;

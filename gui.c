@@ -1007,11 +1007,6 @@ GUI GUICreate(
   // Initialise the result structure for the evaluation
   *appEvalResults = GSetCreateStatic();
   *threadEvalDataset = GDataSetVecFloatCreateStatic();
-  threadEvalDataset->_dataSet._sampleDim = VecShortCreate(1);
-  VecSet(
-    threadEvalDataset->_dataSet._sampleDim,
-    0,
-    1);
 
   // Initialise the result structure for the training
   *threadTrainTxt = GSetCreateStatic();
@@ -1121,6 +1116,12 @@ void LoadGDataset(const char* path) {
 
 // Load a NeuraNet into the application from the file at 'path'
 void LoadNeuraNet(const char* path) {
+
+  if (appNeuranet != NULL) {
+
+    NeuraNetFree(&appNeuranet);
+
+  }
 
   if (path != NULL) {
 

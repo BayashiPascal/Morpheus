@@ -1,0 +1,55 @@
+Abalone dataset:
+----------------
+* 10 inputs, 1 output
+* split: 100/25/25
+* training (epoch/depth/pool/elite): 100/3/100/20
+* Random exploration of topologies by GenAlg (abalone.genalg.nn):
+
+* Systematic exploration of topologies by Morpheus (abalone.morpheus.nn):
+
+Iris dataset:
+-------------
+* 4 inputs, 3 outputs
+* split: 100/25/25
+* training (epoch/depth/pool/elite): 100/3/100/20
+Train the topologies for depth #0.
+Current best value: -1.146324.
+3->7, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->7, 3->7, 
+Train the topologies for depth #1.
+Current best value: -1.102078.
+3->7, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->6, 3->6, 3->7, 3->6, 
+Train the topologies for depth #2.
+Current best value: -1.100404.
+3->7, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->6, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->7, 3->6, 3->6, 3->7, 3->6, 3->6, 3->6, 3->6, 3->6, 3->7, 3->7, 3->6, 3->6, 3->6, 3->6, 3->7, 3->7, 
+Training has ended in 000d:00h:03m:15s.
+* Random exploration of topologies by GenAlg (iris.genalg.nn):
+T:
+Output#0 | Max(X): +002.197 | Avg(X): +000.588 | Var(X): +000.276 
+Output#1 | Max(X): +002.046 | Avg(X): +001.301 | Var(X): +000.775 
+Output#2 | Max(X): +002.039 | Avg(X): +000.786 | Var(X): +000.423 
+V:
+Output#0 | Max(X): +001.679 | Avg(X): +000.557 | Var(X): +000.218 
+Output#1 | Max(X): +002.028 | Avg(X): +001.307 | Var(X): +000.730 
+Output#2 | Max(X): +001.850 | Avg(X): +000.776 | Var(X): +000.367 
+E:
+Output#0 | Max(X): +002.092 | Avg(X): +000.658 | Var(X): +000.290 
+Output#1 | Max(X): +002.046 | Avg(X): +001.269 | Var(X): +000.823 
+Output#2 | Max(X): +002.015 | Avg(X): +000.787 | Var(X): +000.484 
+main -check dataall:
+Value: 0.966667
+
+* Systematic exploration of topologies by Morpheus (iris.morpheus.nn):
+T:
+Output#0 | Max(X): +001.000 | Avg(X): +001.000 | Var(X): +000.000 
+Output#1 | Max(X): +001.852 | Avg(X): +000.222 | Var(X): +000.101 
+Output#2 | Max(X): +001.758 | Avg(X): +000.233 | Var(X): +000.105 
+V:
+Output#0 | Max(X): +001.000 | Avg(X): +001.000 | Var(X): +000.000 
+Output#1 | Max(X): +000.465 | Avg(X): +000.135 | Var(X): +000.017 
+Output#2 | Max(X): +000.550 | Avg(X): +000.151 | Var(X): +000.028 
+E:
+Output#0 | Max(X): +001.000 | Avg(X): +001.000 | Var(X): +000.000 
+Output#1 | Max(X): +001.567 | Avg(X): +000.326 | Var(X): +000.154 
+Output#2 | Max(X): +001.502 | Avg(X): +000.361 | Var(X): +000.144 
+main -check dataall:
+Value: 0.960000
