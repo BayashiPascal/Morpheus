@@ -14,6 +14,7 @@
 #define appInpEvalNeuraNet (app.inputs.inpEvalNeuraNet)
 #define appInpNbIn (app.inputs.inpNbIn)
 #define appInpNbOut (app.inputs.inpNbOut)
+#define appInpOneHot (app.inputs.inpOneHot)
 #define appInpSplitTrain (app.inputs.inpSplitTrain)
 #define appInpSplitEval (app.inputs.inpSplitEval)
 #define appInpSplitValid (app.inputs.inpSplitValid)
@@ -55,6 +56,7 @@
 #define appTrainETCDepth (&(app.trainETCDepth))
 #define threadEvalNbInput (app.threadEvalData.nbInput)
 #define threadEvalNbOutput (app.threadEvalData.nbOutput)
+#define threadEvalOneHot (app.threadEvalData.oneHot)
 #define threadEvalCat (app.threadEvalData.cat)
 #define threadEvalCompletion (app.threadEvalData.completion)
 #define threadEvalDataset (&(app.threadEvalData.dataset))
@@ -77,6 +79,7 @@
 #define threadTrainTxt (&(app.threadTrainResult.setTxt))
 #define threadTrainLbl (&(app.threadTrainResult.setLbl))
 #define threadTrainProg (&(app.threadTrainResult.setProg))
+#define threadTrainOneHot (app.threadTrainData.oneHot)
 
 typedef struct GUIWindows {
 
@@ -132,6 +135,7 @@ typedef struct GUIInputs {
   GtkProgressBar* progEval;
   GtkProgressBar* progTrainTotal;
   GtkProgressBar* progTrainDepth;
+  GtkCheckButton* inpOneHot;
 
 } GUIInputs;
 
@@ -166,6 +170,9 @@ typedef struct ThreadEvalData {
   // Dataset to analyse the result of evaluation
   GDataSetVecFloat dataset;
 
+  // One hot encoding
+  bool oneHot;
+
 } ThreadEvalData;
 
 typedef struct ThreadTrainTopology {
@@ -199,6 +206,7 @@ typedef struct ThreadTrainData {
   int nbThread;
   int nbInput;
   int nbOutput;
+  bool oneHot;
 
   // Current best value
   float curBestVal;

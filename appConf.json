@@ -1,16 +1,17 @@
 {
-  "inpDataset":"/home/bayashi/GitHub/Morpheus/iris.json",
-  "inpNbIn":"4",
-  "inpNbOut":"3",
-  "inpSplitTrain":"100",
-  "inpSplitValid":"25",
-  "inpSplitEval":"25",
-  "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/iris.morpheus.nn",
-  "inpTrainNeuraNet":"/home/bayashi/GitHub/Morpheus/iris.morpheus.nn",
+  "inpDataset":"/home/bayashi/GitHub/Morpheus/wisconsinBreastCancer.json",
+  "inpNbIn":"30",
+  "inpNbOut":"2",
+  "inpSplitTrain":"400",
+  "inpSplitValid":"100",
+  "inpSplitEval":"69",
+  "inpEvalNeuraNet":"/home/bayashi/GitHub/Morpheus/wisconsinBreastCancer.morpheus.nn",
+  "inpTrainNeuraNet":"/home/bayashi/GitHub/Morpheus/wisconsinBreastCancer.morpheus.nn",
   "inpTrainNbEpoch":"100",
   "inpTrainDepth":"3",
   "inpTrainNbElite":"20",
   "inpTrainSizePool":"100",
   "inpTrainBestVal":"0.0",
-  "inpTrainNbThread":"10"
+  "inpTrainNbThread":"10",
+  "inpOneHot":"true"
 }

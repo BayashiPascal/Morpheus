@@ -243,6 +243,15 @@ gboolean CbBtnTrainStartClicked(
           appConf.config,
           "inpNbOut");
       threadTrainNbOut = atoi(JSONLblVal(node));
+      node =
+        JSONProperty(
+          appConf.config,
+          "inpOneHot");
+      int cmp =
+        strcmp(
+          JSONLblVal(node),
+          "true");
+      threadTrainOneHot = (cmp == 0 ? true : false);
       int sampleDim =
         VecGet(
           GDSSampleDim(appDataset),
@@ -452,6 +461,29 @@ gboolean CbInpNbOutChanged(
 
 }
 
+// Callback function for the 'clicked' event on inpOneHot
+gboolean CbInpOneHotClicked(
+  GtkCheckButton* inp,
+   gpointer user_data) {
+
+  // Unused argument
+  (void)user_data;
+
+  JSONNode* node =
+    JSONProperty(
+      appConf.config,
+      "inpOneHot");
+  char* strVal[2] = {"false", "true"};
+  gboolean chk = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(inp));
+  JSONSetVal(
+    node,
+    (chk ? strVal[1] : strVal[0]));
+
+  // Return true to stop the callback chain
+  return TRUE;
+
+}
+
 // Callback function for the 'changed' event on inpSplitTrain
 gboolean CbInpSplitTrainChanged(
   GtkEntry* inp,
@@ -651,6 +683,15 @@ gboolean CbBtnEvalClicked(
             appConf.config,
             "inpNbOut");
         threadEvalNbOutput = atoi(JSONLblVal(node));
+        node =
+          JSONProperty(
+            appConf.config,
+            "inpOneHot");
+        int cmp =
+          strcmp(
+            JSONLblVal(node),
+            "true");
+        threadEvalOneHot = (cmp == 0 ? true : false);
         int sampleDim =
           VecGet(
             GDSSampleDim(appDataset),

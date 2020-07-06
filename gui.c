@@ -387,6 +387,18 @@ void GUIInitCallbacks(GtkBuilder* const gtkBuilder) {
     G_CALLBACK(CbBtnEvalClicked),
     NULL);
 
+  // Set the callback on the 'clicked' event of inpOneHot
+  obj =
+    gtk_builder_get_object(
+      gtkBuilder,
+      "chkOneHot");
+  GtkWidget* inpOneHot = GTK_WIDGET(obj);
+  g_signal_connect(
+    inpOneHot,
+    "clicked",
+    G_CALLBACK(CbInpOneHotClicked),
+    NULL);
+
   // Disable the other signals defined in the UI definition file
   gtk_builder_connect_signals(
     gtkBuilder,
@@ -554,11 +566,12 @@ void GUILoadConfig(void) {
 
   // Check the content of the configuration file
   // If there are missing parameters, create them
-  char* paramNames[14] = {
+  char* paramNames[15] = {
 
     "inpDataset",
     "inpEvalNeuraNet",
     "inpNbIn",
+    "inpOneHot",
     "inpNbOut",
     "inpSplitTrain",
     "inpSplitValid",
@@ -575,7 +588,7 @@ void GUILoadConfig(void) {
 
   for (
     int iParam = 0;
-    iParam < 14;
+    iParam < 15;
     ++iParam) {
 
     JSONNode* node =
@@ -828,6 +841,10 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
     gtk_builder_get_object(
       gtkBuilder,
       "lblTrainEtcDepth"));
+  appInpOneHot = GTK_CHECK_BUTTON(
+    gtk_builder_get_object(
+      gtkBuilder,
+      "chkOneHot"));
 
   // Init the widgets with the value in the config file
   JSONNode* inp =
@@ -928,6 +945,18 @@ void GUIInitInputs(GtkBuilder* const gtkBuilder) {
   gtk_entry_set_text(
     appInpTrainNbThread,
     JSONLblVal(inp));
+  inp =
+    JSONProperty(
+      appConf.config,
+      "inpOneHot");
+  int cmp =
+    strcmp(
+      JSONLblVal(inp),
+      "true");
+  bool chk = (cmp == 0 ? true : false);
+  gtk_toggle_button_set_active(
+    GTK_TOGGLE_BUTTON(appInpOneHot),
+    chk);
 
 }
 
@@ -1093,6 +1122,11 @@ void LoadGDataset(const char* path) {
 
         *appDataset = GDataSetVecFloatCreateStatic();
 
+      } else {
+
+        // Display the dataset
+        DisplayGDataset();
+
       }
 
       fclose(fp);
@@ -1108,9 +1142,6 @@ void LoadGDataset(const char* path) {
     *appDataset = GDataSetVecFloatCreateStatic();
 
   }
-
-  // Display the dataset
-  DisplayGDataset();
 
 }
 

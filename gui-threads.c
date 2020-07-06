@@ -147,6 +147,24 @@ gpointer ThreadWorkerEval(gpointer data) {
       vecIn,
       evalResult->result);
 
+    // If the outputs of the dataset are one-hot encoded
+    if (threadEvalOneHot) {
+      unsigned int iMax =
+        VecGetIMaxVal(evalResult->result);
+
+      for (
+        unsigned int i = threadEvalNbOutput;
+        i--;) {
+
+        VecSet(
+          evalResult->result,
+          i,
+          (i == iMax ? 1.0 : -1.0));
+
+      }
+
+    }
+
     // Append the result to the set of results
     g_mutex_lock(&appMutex);
     GSetAppend(
@@ -546,7 +564,7 @@ NeuraNet* CreateNewTopo(
   // Else, there is a current best topology
   } else {
 
-    // TODO Create a new topology made of the topology of the current best
+    // Create a new topology made of the topology of the current best
     // plus the new link (iIn->iOut)
     long nbHidden = threadTrainBestTopo.nbHidden;
     long nbBasesBest =
@@ -694,6 +712,24 @@ float EvaluateNeuraNet(
       input,
       output);
 
+    // If the outputs of the dataset are one-hot encoded
+    if (threadTrainOneHot) {
+      unsigned int iMax =
+        VecGetIMaxVal(output);
+
+      for (
+        unsigned int i = threadEvalNbOutput;
+        i--;) {
+
+        VecSet(
+          output,
+          i,
+          (i == iMax ? 1.0 : -1.0));
+
+      }
+
+    }
+
     // Get the difference between the prediction and the correct answer
     float v =
       VecDist(
@@ -756,18 +792,17 @@ gpointer ThreadWorkerGenAlg(gpointer data) {
     nn,
     ga);
 
-  // TODO Switch the GenAlg to Morpheus mode with the indices of the
+  // Switch the GenAlg to Morpheus mode with the indices of the
   // currently trained links
   long iBases[2] = {0, 0};
   iBases[0] = NNGetNbMaxBases(nn) - 1;
-  int nbBase = 1;
+  unsigned int nbBase = 1;
   GASetTypeMorpheus(
     ga,
     nbBase,
     iBases,
     NNBases(nn),
     NNLinks(nn));
-
   // Init the GenAlg
   GAInit(ga);
   GASetDiversityThreshold(
